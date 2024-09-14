@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Collaborative Subscription Calculator</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			max-width: 600px;
+			margin: 0 auto;
+			padding: 20px;
+		}
+		form {
+			display: flex;
+			flex-direction: column;
+		}
+		label {
+			margin-bottom: 5px;
+		}
+		input, select {
+			margin-bottom: 15px;
+			padding: 8px;
+			font-size: 16px;
+		}
+		button {
+			padding: 10px;
+			font-size: 18px;
+			background-color: #007bff;
+			color: white;
+			border: none;
+			cursor: pointer;
+		}
+		button:hover {
+			background-color: #0056b3;
+		}
+		#result {
+			margin-top: 20px;
+			font-size: 18px;
+		}
+		.testimonial-section {
+			margin-top: 40px;
+			border-top: 1px solid #ccc;
+			padding-top: 20px;
+		}
+		.testimonial {
+			margin-bottom: 20px;
+			font-style: italic;
+			font-size: 16px;
+		}
+		.testimonial-author {
+			font-weight: bold;
+			font-size: 14px;
+			text-align: right;
+		}
+	</style>
+</head>
+<body>
+
+	<h1>Collaborative Subscription Calculator</h1>
+
+	<form id="subscriptionForm">
+		<!-- Service Type with a default selected option -->
+		<label for="serviceType">Service Type:</label>
+		<select id="serviceType" name="serviceType">
+			<option value="basic" selected>Basic Consulting</option>
+			<option value="premium">Premium Consulting</option>
+			<option value="custom">Custom Consulting</option>
+		</select>
+
+		<!-- Number of Users with a default value -->
+		<label for="numberOfUsers">Number of Users:</label>
+		<input type="number" id="numberOfUsers" name="numberOfUsers" min="1" value="5" required>
+
+		<!-- Duration with a default value -->
+		<label for="duration">Duration (Months):</label>
+		<input type="number" id="duration" name="duration" min="1" value="6" required>
+
+		<!-- Checkbox for Optional Feature with unchecked default -->
+		<label>
+			<input type="checkbox" id="premiumSupport" name="premiumSupport"> Add Premium Support ($50 per month)
+		</label>
+
+	<div id="result"></div>
+
+		<!-- Button to calculate and initiate checkout -->
+		<button type="button" id="calculateButton">Calculate & Proceed to Payment</button>
+	</form>
+
+	<!-- Testimonial Section -->
+	<div class="testimonial-section">
+		<h2>What Clients Are Saying</h2>
+		
+		<div class="testimonial">
+			"Working with this designer was a game-changer. Their collaborative approach and willingness to adapt made our project a success. I can't recommend them enough!"
+			<div class="testimonial-author">- Sarah K., Marketing Manager</div>
+		</div>
+
+		<div class="testimonial">
+			"Not only did they bring creative solutions to the table, but they also worked closely with our team to ensure everything ran smoothly. A true team player!"
+			<div class="testimonial-author">- John D., Product Lead</div>
+		</div>
+
+		<div class="testimonial">
+			"Collaborating with them was a breeze. They were always available for feedback and truly understood our vision. Looking forward to our next project together!"
+			<div class="testimonial-author">- Emily P., Startup Founder</div>
+		</div>
+	</div>
+
+	<script>
+		// Function to calculate the total price
+		function calculateTotalPrice() {
+			const serviceType = document.getElementById('serviceType').value;
+			const numberOfUsers = parseInt(document.getElementById('numberOfUsers').value);
+			const duration = parseInt(document.getElementById('duration').value);
+			const isPremiumSupport = document.getElementById('premiumSupport').checked;
+
+			let basePrice = 100; // Base price for basic consulting
+			if (serviceType === 'premium') {
+				basePrice = 200;
+			} else if (serviceType === 'custom') {
+				basePrice = 300;
+			}
+
+			// Calculate total price
+			let totalPrice = basePrice * numberOfUsers * duration;
+
+			// Add $50 per month for premium support if checked
+			if (isPremiumSupport) {
+				totalPrice += 50 * duration;
+			}
+
+			// Update the total price in the result div
+			document.getElementById('result').innerHTML = `<p>Calculated Total Price: $${totalPrice}</p>`;
+		}
+
+		// Calculate price on page load
+		window.addEventListener('load', calculateTotalPrice);
+
+		// Add event listeners to form elements to update price automatically
+		document.getElementById('serviceType').addEventListener('change', calculateTotalPrice);
+		document.getElementById('numberOfUsers').addEventListener('input', calculateTotalPrice);
+		document.getElementById('duration').addEventListener('input', calculateTotalPrice);
+		document.getElementById('premiumSupport').addEventListener('change', calculateTotalPrice);
+
+		// Event listener for the "Calculate & Proceed to Payment" button
+		document.getElementById('calculateButton').addEventListener('click', function () {
+			// Here you would send the form data to the backend and handle Stripe checkout
+			// Since we are already calculating the price automatically, we don't need to do anything else for calculation here
+
+			// Example code to handle payment (commented out)
+			/*
+			fetch('/create-checkout-session', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ serviceType, numberOfUsers, duration, totalPrice, isPremiumSupport })
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.url) {
+					// Redirect to Stripe Checkout
+					window.location.href = data.url;
+				} else {
+					console.error("Error: Unable to create checkout session");
+				}
+			});
+			*/
+		});
+	</script>
+
+</body>
+</html>

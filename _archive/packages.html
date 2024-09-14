@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Design & Development Sprints for Startups</title>
+	<style>
+		/* Basic styles for layout and card design */
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 0;
+			background-color: #f7f7f7;
+			color: #333;
+		}
+
+		header, footer {
+			text-align: center;
+			padding: 20px;
+			background-color: #333;
+			color: #fff;
+		}
+
+		h1 {
+			margin: 0;
+		}
+
+		main {
+			padding: 20px;
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		/* Style for the filter section */
+		select {
+			padding: 10px;
+			margin-bottom: 20px;
+			font-size: 16px;
+		}
+
+		/* Service card styles */
+		#services-container {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			gap: 20px;
+		}
+
+		.card {
+			background-color: white;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			padding: 20px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			transition: transform 0.3s ease;
+			cursor: pointer;
+		}
+
+		.card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.card h3 {
+			margin-top: 0;
+			font-size: 20px;
+		}
+
+		.card p {
+			margin-bottom: 10px;
+		}
+
+		.card strong {
+			color: #333;
+		}
+
+		/* Modal styles */
+		#modal {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.5);
+			justify-content: center;
+			align-items: center;
+		}
+
+		#modal-content {
+			background-color: white;
+			padding: 40px;
+			border-radius: 8px;
+			text-align: center;
+			max-width: 500px;
+			width: 100%;
+			position: relative;
+		}
+
+		#modal-content h1 {
+			margin-bottom: 20px;
+		}
+
+		#modal-content a {
+			display: inline-block;
+			margin: 10px;
+			color: #007BFF;
+			text-decoration: none;
+			font-size: 16px;
+		}
+
+		#modal-content a:hover {
+			text-decoration: underline;
+		}
+
+		/* Close button style */
+		#modal-content .close {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			font-size: 20px;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+
+	<header>
+		<h1>Design & Development Sprints for Startups</h1>
+		<p>We offer targeted, 3-week sprints designed to help your startup move fast and launch with confidence. Whether you need a strategic direction, branding, or a fully functional landing page, we’ve got you covered.</p>
+	</header>
+
+	<main>
+		<section>
+			<h2>Filter by Client Type</h2>
+			<!-- Dropdown for selecting client type -->
+			<select id="client-filter">
+				<option value="All">All</option>
+				<option value="Startup Founders">Startup Founders</option>
+				<option value="Solopreneurs">Solopreneurs</option>
+				<option value="Agency Creative">Agency Creative</option>
+				<option value="In-House Creative">In-House Creative</option>
+			</select>
+		</section>
+
+		<section>
+			<h2>Services</h2>
+			<!-- Services will be dynamically inserted here in card format -->
+			<div id="services-container"></div>
+		</section>
+
+		<section>
+			<h2>Monthly Iteration Support</h2>
+			<p><strong>Price:</strong> $4,800 per month</p>
+			<p>Ongoing support to keep your projects fresh and updated. We work asynchronously via Trello to tackle small updates, revisions, or minor tweaks. Monday and Friday syncs are available for planning and feedback.</p>
+			<ul>
+				<li><strong>Task Management:</strong> Asynchronous updates, tracked on Trello.</li>
+				<li><strong>Response Time:</strong> Tasks handled within 24-48 hours.</li>
+				<li><strong>Sync Availability:</strong> Optional syncs on Monday and Friday.</li>
+			</ul>
+		</section>
+
+		<section>
+			<h2>How It Works</h2>
+			<ol>
+				<li><strong>Choose Your Sprint</strong> – Pick the service that fits your needs.</li>
+				<li><strong>Get Started</strong> – We work in 3-week sprints to ensure quick turnarounds.</li>
+				<li><strong>Ongoing Support</strong> – Need continuous help? Our monthly iteration support keeps things moving after launch.</li>
+			</ol>
+		</section>
+	</main>
+
+	<footer>
+		<p>Ready to get started? Let’s talk about how we can help your startup succeed.</p>
+	</footer>
+
+	<!-- Modal Overlay -->
+	<div id="modal">
+		<div id="modal-content">
+			<span class="close" onclick="closeModal()">&times;</span>
+			<h1 id="modal-service-name"></h1>
+			<a href="#">Learn More</a>
+			<a href="#">Book Now</a>
+		</div>
+	</div>
+
+	<script>
+		// Airtable API credentials
+		const apiKey = 'patlF53bXMOsfHpoW.50cf01bcff2f4ac0ae21e1a17206305a8b2341ef08680063fa7c298beed86fa3';
+		const baseId = 'appi2wYAmw48ldLmy';
+		const tableName = 'Services';
+		const viewName = 'Available'; // Fetch records from 'Available' view
+
+		// Function to fetch and display services
+		function fetchServices(clientFilter = "All") {
+			fetch(`https://api.airtable.com/v0/${baseId}/${tableName}?view=${viewName}`, {
+				headers: {
+					Authorization: `Bearer ${apiKey}`
+				}
+			})
+			.then(response => response.json())
+			.then(data => {
+				const servicesContainer = document.getElementById('services-container');
+				servicesContainer.innerHTML = '';  // Clear current services
+					
+				// Iterate over each service and create HTML structure for each card
+				data.records.forEach(record => {
+					const service = record.fields;
+
+					// Filter based on the client type
+					if (clientFilter === "All" || (service.Clients && service.Clients.includes(clientFilter))) {
+						const serviceHTML = `
+							<div class="card" onclick="openModal('${service.Name}')">
+								<h3>${service.Name}</h3>
+								<p>${service.Description}</p>
+								<p><strong>Tools:</strong> ${service.Tools}</p>
+								<p><strong>Price:</strong> $${service.Price}</p>
+								<p><strong>Next start date available:</strong> ${service['Next Available']}</p>
+							</div>
+						`;
+						servicesContainer.innerHTML += serviceHTML;
+					}
+				});
+			})
+			.catch(error => console.error('Error fetching Airtable data:', error));
+		}
+
+		// Open modal and set service name
+		function openModal(serviceName) {
+			const modal = document.getElementById('modal');
+			document.getElementById('modal-service-name').innerText = serviceName;
+			modal.style.display = 'flex'; // Show modal
+		}
+
+		// Close modal
+		function closeModal() {
+			const modal = document.getElementById('modal');
+			modal.style.display = 'none'; // Hide modal
+		}
+
+		// Close modal when clicking outside of modal content
+		window.onclick = function(event) {
+			const modal = document.getElementById('modal');
+			if (event.target === modal) {
+				closeModal();
+			}
+		}
+
+		// Fetch all services on page load
+		fetchServices();
+
+		// Event listener for client filter change
+		document.getElementById('client-filter').addEventListener('change', function() {
+			const selectedClient = this.value;
+			fetchServices(selectedClient);
+		});
+	</script>
+</body>
+</html>

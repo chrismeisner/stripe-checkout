@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Design & Development Sprints for Startups</title>
+</head>
+<body>
+
+	<header>
+		<h1>Design & Development Sprints for Startups</h1>
+		<p>We offer targeted, 3-week sprints designed to help your startup move fast and launch with confidence. Whether you need a strategic direction, branding, or a fully functional landing page, we’ve got you covered.</p>
+	</header>
+
+	<main>
+		<section>
+			<h2>Filter by Client Type</h2>
+			<!-- Dropdown for selecting client type -->
+			<select id="client-filter">
+				<option value="All">All</option>
+				<option value="Startup Founders">Startup Founders</option>
+				<option value="Solopreneurs">Solopreneurs</option>
+				<option value="Agency Creative">Agency Creative</option>
+				<option value="In-House Creative">In-House Creative</option>
+			</select>
+		</section>
+
+		<section>
+			<h2>Our Sprints</h2>
+			<!-- Services will be dynamically inserted here -->
+			<div id="services-container"></div>
+		</section>
+
+		<section>
+			<h2>Monthly Iteration Support</h2>
+			<p><strong>Price:</strong> $4,800 per month</p>
+			<p>Ongoing support to keep your projects fresh and updated. We work asynchronously via Trello to tackle small updates, revisions, or minor tweaks. Monday and Friday syncs are available for planning and feedback.</p>
+			<ul>
+				<li><strong>Task Management:</strong> Asynchronous updates, tracked on Trello.</li>
+				<li><strong>Response Time:</strong> Tasks handled within 24-48 hours.</li>
+				<li><strong>Sync Availability:</strong> Optional syncs on Monday and Friday.</li>
+			</ul>
+		</section>
+
+		<section>
+			<h2>How It Works</h2>
+			<ol>
+				<li><strong>Choose Your Sprint</strong> – Pick the service that fits your needs.</li>
+				<li><strong>Get Started</strong> – We work in 3-week sprints to ensure quick turnarounds.</li>
+				<li><strong>Ongoing Support</strong> – Need continuous help? Our monthly iteration support keeps things moving after launch.</li>
+			</ol>
+		</section>
+	</main>
+
+	<footer>
+		<p>Ready to get started? Let’s talk about how we can help your startup succeed.</p>
+	</footer>
+
+	<script>
+		// Airtable API credentials
+		const apiKey = 'patlF53bXMOsfHpoW.50cf01bcff2f4ac0ae21e1a17206305a8b2341ef08680063fa7c298beed86fa3';
+		const baseId = 'appi2wYAmw48ldLmy';
+		const tableName = 'Services';
+
+		// Function to fetch and display services
+		function fetchServices(clientFilter = "All") {
+			fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+				headers: {
+					Authorization: `Bearer ${apiKey}`
+				}
+			})
+			.then(response => response.json())
+			.then(data => {
+				const servicesContainer = document.getElementById('services-container');
+				servicesContainer.innerHTML = '';  // Clear current services
+					
+				// Iterate over each service and create HTML structure
+				data.records.forEach(record => {
+					const service = record.fields;
+					
+					// Filter based on the client type
+					if (clientFilter === "All" || (service.Clients && service.Clients.includes(clientFilter))) {
+						const serviceHTML = `
+							<article>
+								<h3>${service.Name}</h3>
+								<p><strong>Tools:</strong> ${service.Tools}</p>
+								<p><strong>Price:</strong> $${service.Price}</p>
+								<p>${service.Description}</p>
+								<p><strong>Clients:</strong> ${service.Clients}</p>
+							</article>
+						`;
+						servicesContainer.innerHTML += serviceHTML;
+					}
+				});
+			})
+			.catch(error => console.error('Error fetching Airtable data:', error));
+		}
+
+		// Fetch all services on page load
+		fetchServices();
+
+		// Event listener for client filter change
+		document.getElementById('client-filter').addEventListener('change', function() {
+			const selectedClient = this.value;
+			fetchServices(selectedClient);
+		});
+	</script>
+</body>
+</html>

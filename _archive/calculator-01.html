@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Freelancer Booking Calculator</title>
+	<!-- Include Tailwind CSS -->
+	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.7/dist/tailwind.min.css" rel="stylesheet">
+	<script>
+		// Base rates
+		const rates = {
+			"design-only": 1000,
+			"design-development": 1200
+		};
+
+		// Discount for monthly booking
+		const discountRate = 0.20; // 20% discount
+
+		// JavaScript to toggle visibility of weekly/monthly options
+		function toggleTimeframeOptions() {
+			const selection = document.querySelector('input[name="timeframe"]:checked').value;
+			const weeklySection = document.getElementById("weekly-options");
+			const monthlySection = document.getElementById("monthly-options");
+			const discountMessage = document.getElementById("discount-message");
+
+			if (selection === "weekly") {
+				weeklySection.classList.remove('hidden');
+				monthlySection.classList.add('hidden');
+				discountMessage.classList.add('hidden');
+			} else if (selection === "monthly") {
+				weeklySection.classList.add('hidden');
+				monthlySection.classList.remove('hidden');
+				discountMessage.classList.remove('hidden'); // Show discount message
+			} else {
+				weeklySection.classList.add('hidden');
+				monthlySection.classList.add('hidden');
+				discountMessage.classList.add('hidden');
+			}
+			calculateTotal();
+		}
+
+		// Function to generate a unique ID based on current selections
+		function generateUniqueId() {
+			// Service Type
+			const serviceType = document.querySelector('input[name="service"]:checked').value;
+			const serviceCode = serviceType === "design-only" ? "DO" : "DD";
+
+			// Timeframe
+			const timeframe = document.querySelector('input[name="timeframe"]:checked').value;
+			const timeframeCode = timeframe === "weekly" ? "W" : "M";
+
+			// Days per Week
+			let daysPerWeek = 0;
+			if (timeframe === "weekly") {
+				daysPerWeek = document.getElementById("weekly-days-per-week").value;
+			} else if (timeframe === "monthly") {
+				daysPerWeek = document.getElementById("monthly-days").value;
+			}
+			const daysCode = daysPerWeek + "D";
+
+			// Day Type
+			let dayType = "";
+			if (timeframe === "weekly") {
+				dayType = document.querySelector('input[name="weekly-day-type"]:checked').value;
+			} else if (timeframe === "monthly") {
+				dayType = document.querySelector('input[name="monthly-day-type"]:checked').value;
+			}
+			const dayTypeCode = dayType === "half-day" ? "H" : "F";
+
+			// Combine Codes
+			const uniqueId = `${serviceCode}-${timeframeCode}-${daysCode}-${dayTypeCode}`;
+			return uniqueId;
+		}
+
+		// Function to calculate the total cost dynamically
+		function calculateTotal() {
+			// Get selected service type
+			const serviceType = document.querySelector('input[name="service"]:checked').value;
+			let baseRate = rates[serviceType];
+
+			// Get timeframe selection
+			const timeframe = document.querySelector('input[name="timeframe"]:checked').value;
+			let totalDays = 0;
+			let timeUnit = "";
+
+			if (timeframe === "weekly") {
+				// Get days per week
+				const daysPerWeek = parseInt(document.getElementById("weekly-days-per-week").value);
+
+				// Check if full or half days
+				const dayType = document.querySelector('input[name="weekly-day-type"]:checked').value;
+				const dayMultiplier = dayType === "half-day" ? 0.5 : 1;
+
+				totalDays = daysPerWeek * dayMultiplier;
+				timeUnit = "per week";
+			} else if (timeframe === "monthly") {
+				// Apply discount to base rate for monthly
+				baseRate = baseRate * (1 - discountRate);
+
+				// Get days per week for monthly
+				const daysPerWeek = parseInt(document.getElementById("monthly-days").value);
+
+				// Check if full or half days
+				const dayType = document.querySelector('input[name="monthly-day-type"]:checked').value;
+				const dayMultiplier = dayType === "half-day" ? 0.5 : 1;
+
+				// Multiply by 4 for monthly total
+				totalDays = daysPerWeek * dayMultiplier * 4; // Monthly is 4 weeks
+				timeUnit = "per month";
+			}
+
+			// Calculate the total cost
+			const totalCost = totalDays * baseRate;
+
+			// Update the total cost display with the selected timeframe
+			document.getElementById("total-cost").textContent = `$${totalCost.toFixed(2)} ${timeUnit}`;
+
+			// Generate unique ID and print to console
+			const uniqueId = generateUniqueId();
+			console.log("Unique ID:", uniqueId);
+		}
+
+		// Event listeners to update the cost whenever a selection changes
+		document.addEventListener('DOMContentLoaded', () => {
+			const elementsToWatch = [
+				'input[name="service"]',
+				'input[name="timeframe"]',
+				'#weekly-days-per-week',
+				'input[name="weekly-day-type"]',
+				'#monthly-days',
+				'input[name="monthly-day-type"]',
+				'input[name="recurring-weekly"]',
+				'input[name="recurring-monthly"]',
+				'#weekly-kickoff-date',
+				'#monthly-kickoff-date'
+			];
+
+			// Add event listeners to all form controls
+			elementsToWatch.forEach(selector => {
+				const elements = document.querySelectorAll(selector);
+				elements.forEach(element => {
+					element.addEventListener('change', calculateTotal);
+				});
+			});
+
+			// Calculate total on page load using default selections
+			calculateTotal();
+		});
+
+		// Open the modal
+		function openModal(modalId) {
+			document.getElementById(modalId).classList.remove('hidden');
+		}
+
+		// Close the modal
+		function closeModal(modalId) {
+			document.getElementById(modalId).classList.add('hidden');
+		}
+	</script>
+</head>
+<body class="p-6">
+	<h1 class="text-2xl font-bold mb-4">Freelancer Booking Calculator</h1>
+	<!-- Book Discovery Call Button -->
+	<button onclick="alert('Book a discovery call!')" class="bg-blue-500 text-white px-4 py-2 rounded-md mb-6">Book Discovery Call</button>
+
+	<!-- Service Selection -->
+	<section id="service-selection" class="mb-6">
+		<h2 class="text-xl font-semibold mb-2">Select Service Type</h2>
+		<label class="block mb-2">
+			<input type="radio" name="service" value="design-only" checked class="mr-2">
+			Design Only ($1,000/day)
+			<a href="#" onclick="openModal('modal-design-only'); event.stopPropagation();" class="text-blue-500 underline ml-2">Read more</a>
+		</label>
+		<label class="block mb-2">
+			<input type="radio" name="service" value="design-development" class="mr-2">
+			Design + Development ($1,200/day)
+			<a href="#" onclick="openModal('modal-design-development'); event.stopPropagation();" class="text-blue-500 underline ml-2">Read more</a>
+		</label>
+	</section>
+
+	<!-- Timeframe Type Selection as Radio Buttons -->
+	<section id="timeframe-selection" class="mb-6">
+		<h2 class="text-xl font-semibold mb-2">Select Timeframe Type</h2>
+		<label class="block mb-2">
+			<input type="radio" name="timeframe" value="weekly" checked onclick="toggleTimeframeOptions()" class="mr-2">
+			Weekly
+		</label>
+		<label class="block mb-2">
+			<input type="radio" name="timeframe" value="monthly" onclick="toggleTimeframeOptions()" class="mr-2">
+			Monthly
+		</label>
+	</section>
+
+	<!-- Weekly Options -->
+	<section id="weekly-options" class="mb-6">
+		<h3 class="text-lg font-semibold mb-2">Weekly Booking</h3>
+
+		<!-- Days per Week -->
+		<label for="weekly-days-per-week" class="block mb-2">Days per Week:</label>
+		<select id="weekly-days-per-week" class="border border-gray-300 rounded-md mb-4 p-2">
+			<option value="3">3 Days per Week</option>
+			<option value="4">4 Days per Week</option>
+			<option value="5">5 Days per Week</option>
+		</select>
+
+		<!-- Half Days or Full Days -->
+		<p class="mb-2 font-medium">Do you want Half Days or Full Days?</p>
+		<label class="block mb-2">
+			<input type="radio" name="weekly-day-type" value="half-day" class="mr-2">
+			Half Days (4hrs)
+		</label>
+		<label class="block mb-4">
+			<input type="radio" name="weekly-day-type" value="full-day" checked class="mr-2">
+			Full Days (8hrs)
+		</label>
+
+		<!-- Kick-off Date for Weekly -->
+		<label for="weekly-kickoff-date" class="block mb-2">Kick-off Week:</label>
+		<select id="weekly-kickoff-date" class="border border-gray-300 rounded-md mb-4 p-2">
+			<option value="sept-16">Monday, Sept 16</option>
+			<option value="sept-23">Monday, Sept 23</option>
+			<option value="sept-30">Monday, Sept 30</option>
+			<option value="oct-07">Monday, Oct 7</option>
+		</select>
+
+		<!-- Recurring Weekly -->
+		<label class="block mb-2">
+			<input type="checkbox" name="recurring-weekly" value="weekly" checked class="mr-2">
+			Recurring Weekly
+		</label>
+	</section>
+
+	<!-- Monthly Options -->
+	<section id="monthly-options" class="mb-6 hidden">
+		<h3 class="text-lg font-semibold mb-2">Monthly Booking</h3>
+
+		<!-- Days per Week -->
+		<label for="monthly-days" class="block mb-2">Days per Week:</label>
+		<select id="monthly-days" class="border border-gray-300 rounded-md mb-4 p-2">
+			<option value="3">3 Days per Week</option>
+			<option value="4">4 Days per Week</option>
+			<option value="5">5 Days per Week</option>
+		</select>
+
+		<!-- Half Days or Full Days -->
+		<p class="mb-2 font-medium">Do you want Half Days or Full Days?</p>
+		<label class="block mb-2">
+			<input type="radio" name="monthly-day-type" value="half-day" class="mr-2">
+			Half Days (4hrs)
+		</label>
+		<label class="block mb-4">
+			<input type="radio" name="monthly-day-type" value="full-day" checked class="mr-2">
+			Full Days (8hrs)
+		</label>
+
+		<!-- Kick-off Date for Monthly -->
+		<label for="monthly-kickoff-date" class="block mb-2">Kick-off Week:</label>
+		<select id="monthly-kickoff-date" class="border border-gray-300 rounded-md mb-4 p-2">
+			<option value="sept-16">Monday, Sept 16</option>
+			<option value="sept-23">Monday, Sept 23</option>
+			<option value="sept-30">Monday, Sept 30</option>
+			<option value="oct-07">Monday, Oct 7</option>
+		</select>
+
+		<!-- Recurring Monthly -->
+		<label class="block mb-2">
+			<input type="checkbox" name="recurring-monthly" value="monthly" checked class="mr-2">
+			Recurring Monthly
+		</label>
+
+		<!-- Discount Message for Monthly -->
+		<p id="discount-message" class="text-green-500 mt-2">20% monthly discount applied to day rate</p>
+	</section>
+
+	<!-- Summary Section -->
+	<section id="summary" class="mb-6">
+		<h2 class="text-xl font-semibold mb-2">Summary</h2>
+		<p>Total Cost: <span id="total-cost" class="font-bold">$0.00 per week</span></p>
+	</section>
+
+	<!-- Checkout Button -->
+	<section id="checkout" class="mb-6">
+		<button type="button" class="bg-green-500 text-white px-4 py-2 rounded-md">Proceed to Checkout</button>
+	</section>
+
+	<!-- Modals for Service Details -->
+	<!-- Modal for Design Only -->
+	<div id="modal-design-only" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden" onclick="closeModal('modal-design-only')">
+		<div class="bg-white p-6 w-11/12 max-w-md rounded-md relative" onclick="event.stopPropagation();">
+			<button class="text-red-500 text-2xl absolute top-2 right-2" onclick="closeModal('modal-design-only')">&times;</button>
+			<h2 class="text-xl font-bold mb-4">Design Only Package</h2>
+			<p>Includes design services such as wireframes, mockups, and user experience design for your product.</p>
+			<p class="mt-4 font-semibold">Deliverables:</p>
+			<ul class="list-disc list-inside">
+				<li>3 design concepts</li>
+				<li>5 revision rounds</li>
+				<li>Final design files in PSD/Sketch format</li>
+			</ul>
+		</div>
+	</div>
+
+	<!-- Modal for Design + Development -->
+	<div id="modal-design-development" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden" onclick="closeModal('modal-design-development')">
+		<div class="bg-white p-6 w-11/12 max-w-md rounded-md relative" onclick="event.stopPropagation();">
+			<button class="text-red-500 text-2xl absolute top-2 right-2" onclick="closeModal('modal-design-development')">&times;</button>
+			<h2 class="text-xl font-bold mb-4">Design + Development Package</h2>
+			<p>Includes both design and development services to take your product from concept to a fully developed application.</p>
+			<p class="mt-4 font-semibold">Deliverables:</p>
+			<ul class="list-disc list-inside">
+				<li>Complete design and development</li>
+				<li>Responsive web design</li>
+				<li>Frontend and backend development</li>
+			</ul>
+		</div>
+	</div>
+</body>
+</html>
