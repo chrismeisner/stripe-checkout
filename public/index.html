@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chris Meisner - Design Partner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <div class="max-w-md mx-auto p-4 bg-white shadow-lg mt-8 rounded-lg">
+	<div class="mb-6">
+	  <h1 class="text-2xl font-bold text-left">Chris Meisner</h1>
+	  <p class="text-gray-700 mt-2 text-left">Intro paragraph, design partner to founders, help founders and startups bring their ideas to life.</p>
+	  <a href="#" class="text-blue-600 mt-4 inline-block underline">Book a discovery call</a>
+	</div>
+
+	<div>
+	  <h2 class="font-semibold text-lg mb-2">Available Services:</h2>
+	  <div id="serviceSelection" class="grid grid-cols-2 gap-4">
+		<div>
+		  <div data-service="Design" data-rate="1000" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
+			<p class="font-medium">Design</p>
+			<p class="text-sm mt-1">$1,000 day rate</p>
+		  </div>
+		  <a href="#" class="text-blue-600 mt-2 inline-block underline">Learn more</a>
+		</div>
+		<div>
+		  <div data-service="Design+Code" data-rate="1200" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
+			<p class="font-medium">Design + Code</p>
+			<p class="text-sm mt-1">$1,200 day rate</p>
+		  </div>
+		  <a href="#" class="text-blue-600 mt-2 inline-block underline">Learn more</a>
+		</div>
+	  </div>
+
+	  <div class="mt-6 hidden" id="daysSection">
+		<h2 class="font-semibold text-lg mb-2">How many days a week do you need me?</h2>
+		<div class="flex justify-start items-center space-x-4">
+		  <button type="button" id="decrease" class="w-12 h-12 bg-gray-300 hover:bg-gray-400 rounded-full text-xl flex justify-center items-center">-</button>
+		  <span id="days" class="text-xl font-semibold">1.0</span>
+		  <button type="button" id="increase" class="w-12 h-12 bg-gray-300 hover:bg-gray-400 rounded-full text-xl flex justify-center items-center">+</button>
+		</div>
+	  </div>
+
+	  <div class="mt-6 hidden" id="startDateSection">
+		<h2 class="font-semibold text-lg mb-2">When do you want to get started?</h2>
+		<div>
+		  <select id="startDate" class="bg-gray-100 p-2 rounded">
+			<option value="2024-09-16">Week of Sept 16</option>
+			<option value="2024-09-23">Week of Sept 23</option>
+			<option value="2024-09-30">Week of Sept 30</option>
+		  </select>
+		</div>
+	  </div>
+
+	  <div class="mt-6">
+		<p class="text-3xl font-bold" id="totalPrice">$0</p>
+		<p class="text-lg">Per Week</p>
+
+		<div class="mt-4">
+		  <label class="inline-flex items-center">
+			<input type="checkbox" id="recurring" class="form-checkbox h-5 w-5 text-blue-600">
+			<span class="ml-2 text-gray-700">Recurring Weekly</span>
+		  </label>
+		</div>
+
+		<div class="mt-6">
+		  <button type="button" id="proceedToPayment" class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Proceed to Payment</button>
+		</div>
+	  </div>
+	</div>
+  </div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+	  const serviceOptions = document.querySelectorAll('.service-option');
+	  let selectedServiceRate = 0;
+	  let days = 1.0;
+	  let activeService = null;
+	  let recurring = false;
+	
+	  const daysElement = document.getElementById('days');
+	  const totalPriceElement = document.getElementById('totalPrice');
+	  const startDateSection = document.getElementById('startDateSection');
+	  const proceedButton = document.getElementById('proceedToPayment');
+	  const startDateElement = document.getElementById('startDate');
+	
+	  // Ensure button is disabled on page load
+	  proceedButton.disabled = true;
+	
+	  document.getElementById('increase').addEventListener('click', () => {
+		if (days < 5) {
+		  days += 0.5;
+		  daysElement.textContent = days.toFixed(1);
+		  updateTotalPrice();
+		  printSummary();
+		}
+	  });
+	
+	  document.getElementById('decrease').addEventListener('click', () => {
+		if (days > 0.5) {
+		  days -= 0.5;
+		  daysElement.textContent = days.toFixed(1);
+		  updateTotalPrice();
+		  printSummary();
+		}
+	  });
+	
+	  serviceOptions.forEach(option => {
+		option.addEventListener('click', () => {
+		  const isActive = option === activeService;
+	
+		  if (isActive) {
+			option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
+			document.getElementById('daysSection').classList.add('hidden');
+			startDateSection.classList.add('hidden');
+			activeService = null;
+			resetServiceSelection();
+		  } else {
+			serviceOptions.forEach(opt => opt.classList.remove('selected', 'bg-blue-100', 'border-blue-500'));
+			option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
+	
+			selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
+			daysElement.textContent = days.toFixed(1);
+			document.getElementById('daysSection').classList.remove('hidden');
+			startDateSection.classList.remove('hidden');
+			activeService = option;
+		  }
+		  toggleProceedButton();
+		  updateTotalPrice(); // Ensure price updates when a service is selected
+		  printSummary();
+		});
+	  });
+	
+	  document.getElementById('recurring').addEventListener('change', (e) => {
+		recurring = e.target.checked;
+		printSummary();
+	  });
+
+	  // Update summary when the dropdown value changes
+	  startDateElement.addEventListener('change', (e) => {
+		printSummary(); // Trigger summary update
+	  });
+	
+	  function resetServiceSelection() {
+		selectedServiceRate = 0;
+		daysElement.textContent = days.toFixed(1);
+		updateTotalPrice();
+		toggleProceedButton();
+	  }
+	
+	  function updateTotalPrice() {
+		const total = selectedServiceRate * days;
+		totalPriceElement.textContent = '$' + total.toLocaleString();
+	  }
+	
+	  function toggleProceedButton() {
+		if (activeService) {
+		  proceedButton.disabled = false;
+		} else {
+		  proceedButton.disabled = true;
+		}
+	  }
+	
+	  function printSummary() {
+		let serviceName = activeService ? activeService.getAttribute('data-service') : 'None';
+		let startDate = document.getElementById('startDate').value;
+		
+		// Log recurring value to check if it's being captured correctly
+		console.log(`Is Recurring Checked: ${recurring}`);
+	  
+		// Trial Period Logic
+		let trialPeriodDays = 0;
+		if (recurring) {
+		  const today = new Date();
+		  const selectedDate = new Date(startDate);
+		  trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24)); // Calculate days between today and startDate
+		  
+		  // Check for negative trial period
+		  if (trialPeriodDays < 0) {
+			trialPeriodDays = 0;
+		  }
+		  
+		  console.log(`Trial Period: ${trialPeriodDays} day(s)`); // Log the trial period
+		}
+	  
+		let summary = `Selected Service: ${serviceName}\nDays per Week: ${days.toFixed(1)}\nRecurring: ${recurring ? 'Yes' : 'No'}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days).toLocaleString()}`;
+		console.log(summary);
+	  }
+	
+	  // Initialize Stripe.js with your publishable key
+	  var stripe = Stripe('pk_live_51PCj8lIHCU1xjU1mJ4ao2rwBnuPauB5BdaAwqGV6v0zOpVy3ZYIkfRyoFurGIHrtSVkfN3mtAjokbIOqt9iVXn9X00awUln3ba'); // Replace with your actual publishable key
+	
+	  // Add event listener to the Proceed to Payment button
+	  proceedButton.addEventListener('click', () => {
+		const recurring = document.getElementById('recurring').checked;
+		let serviceName = activeService ? activeService.getAttribute('data-service') : 'None';
+		let startDate = document.getElementById('startDate').value;
+		let summary = `Selected Service: ${serviceName}, Days per Week: ${days.toFixed(1)}, Recurring: ${recurring ? 'Yes' : 'No'}, Start Date: ${startDate}, Total Price: $${(selectedServiceRate * days).toLocaleString()}`;
+  
+		// Send POST request to server to create checkout session
+		fetch('/create-checkout-session', {
+		  method: 'POST',
+		  headers: {
+			'Content-Type': 'application/json',
+		  },
+		  body: JSON.stringify({
+			amount: selectedServiceRate * days,
+			recurring: recurring,
+			serviceName: serviceName, // Pass the service name here
+			summary: summary, // Pass the summary here
+			startDate: startDate // Pass the selected start date
+		  }),
+		})
+		.then((response) => response.json())
+		.then((session) => {
+		  // Redirect to Stripe Checkout
+		  return stripe.redirectToCheckout({ sessionId: session.id });
+		})
+		.then((result) => {
+		  if (result.error) {
+			alert(result.error.message);
+		  }
+		})
+		.catch((error) => {
+		  console.error('Error:', error);
+		});
+	  });
+	});
+  </script>
+
+</body>
+</html>
