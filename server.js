@@ -76,4 +76,8 @@ app.post('/create-checkout-session', async (req, res) => {
   }
 });
 
-app.listen(4242, () => console.log('Running on port 4242'));
+// Update this line to bind to the correct port for Heroku
+const port = process.env.PORT || 4242;
+app.listen(port, () => {
+  console.log(`Running on port ${port}`);
+});
