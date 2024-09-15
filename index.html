@@ -13,7 +13,7 @@
 	<div class="mb-6">
 	  <h1 class="text-2xl font-bold text-left">Chris Meisner</h1>
 	  <p class="text-gray-700 mt-2 text-left">Intro paragraph, design partner to founders, help founders and startups bring their ideas to life.</p>
-	  <a href="https://calendly.com/chrismeisner/intro" target="_blank" class="text-blue-600 mt-4 inline-block underline">Book a discovery call</a>
+	  <a href="#" class="text-blue-600 mt-4 inline-block underline">Book a discovery call</a>
 	</div>
 
 	<div>
@@ -24,14 +24,14 @@
 			<p class="font-medium">Design</p>
 			<p class="text-sm mt-1">$1,000 day rate</p>
 		  </div>
-		  <a href="#" id="learnMoreDesign" class="text-blue-600 mt-2 inline-block underline">Learn more</a>
+		  <a href="#" class="text-blue-600 mt-2 inline-block underline">Learn more</a>
 		</div>
 		<div>
 		  <div data-service="Design+Code" data-rate="1200" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
 			<p class="font-medium">Design + Code</p>
 			<p class="text-sm mt-1">$1,200 day rate</p>
 		  </div>
-		  <a href="#" id="learnMoreDesignCode" class="text-blue-600 mt-2 inline-block underline">Learn more</a>
+		  <a href="#" class="text-blue-600 mt-2 inline-block underline">Learn more</a>
 		</div>
 	  </div>
 
@@ -73,41 +73,23 @@
 	</div>
   </div>
 
-  <!-- Modal for Design Service -->
-  <div id="designModal" class="fixed z-50 inset-0 hidden flex items-center justify-center bg-gray-900 bg-opacity-50">
-	<div class="bg-white rounded-lg p-6 max-w-lg w-full shadow-lg">
-	  <h2 class="text-xl font-bold mb-4">Design Service Details</h2>
-	  <p>This service includes UX/UI design, product design, and visual design to help you bring your product idea to life.</p>
-	  <button id="closeDesignModal" class="mt-4 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Close</button>
-	</div>
-  </div>
-
-  <!-- Modal for Design + Code Service -->
-  <div id="designCodeModal" class="fixed z-50 inset-0 hidden flex items-center justify-center bg-gray-900 bg-opacity-50">
-	<div class="bg-white rounded-lg p-6 max-w-lg w-full shadow-lg">
-	  <h2 class="text-xl font-bold mb-4">Design + Code Service Details</h2>
-	  <p>This service includes design along with front-end development using modern web technologies like HTML, CSS, and JavaScript to build your product.</p>
-	  <button id="closeDesignCodeModal" class="mt-4 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Close</button>
-	</div>
-  </div>
-
-  <script>
+<script>
 	document.addEventListener('DOMContentLoaded', function() {
 	  const serviceOptions = document.querySelectorAll('.service-option');
 	  let selectedServiceRate = 0;
 	  let days = 1.0;
 	  let activeService = null;
 	  let recurring = false;
-
+	
 	  const daysElement = document.getElementById('days');
 	  const totalPriceElement = document.getElementById('totalPrice');
 	  const startDateSection = document.getElementById('startDateSection');
 	  const proceedButton = document.getElementById('proceedToPayment');
 	  const startDateElement = document.getElementById('startDate');
-
+	
 	  // Ensure button is disabled on page load
 	  proceedButton.disabled = true;
-
+	
 	  document.getElementById('increase').addEventListener('click', () => {
 		if (days < 5) {
 		  days += 0.5;
@@ -116,7 +98,7 @@
 		  printSummary();
 		}
 	  });
-
+	
 	  document.getElementById('decrease').addEventListener('click', () => {
 		if (days > 0.5) {
 		  days -= 0.5;
@@ -125,11 +107,11 @@
 		  printSummary();
 		}
 	  });
-
+	
 	  serviceOptions.forEach(option => {
 		option.addEventListener('click', () => {
 		  const isActive = option === activeService;
-
+	
 		  if (isActive) {
 			option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
 			document.getElementById('daysSection').classList.add('hidden');
@@ -139,7 +121,7 @@
 		  } else {
 			serviceOptions.forEach(opt => opt.classList.remove('selected', 'bg-blue-100', 'border-blue-500'));
 			option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
-
+	
 			selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
 			daysElement.textContent = days.toFixed(1);
 			document.getElementById('daysSection').classList.remove('hidden');
@@ -151,7 +133,7 @@
 		  printSummary();
 		});
 	  });
-
+	
 	  document.getElementById('recurring').addEventListener('change', (e) => {
 		recurring = e.target.checked;
 		printSummary();
@@ -161,19 +143,19 @@
 	  startDateElement.addEventListener('change', (e) => {
 		printSummary(); // Trigger summary update
 	  });
-
+	
 	  function resetServiceSelection() {
 		selectedServiceRate = 0;
 		daysElement.textContent = days.toFixed(1);
 		updateTotalPrice();
 		toggleProceedButton();
 	  }
-
+	
 	  function updateTotalPrice() {
 		const total = selectedServiceRate * days;
 		totalPriceElement.textContent = '$' + total.toLocaleString();
 	  }
-
+	
 	  function toggleProceedButton() {
 		if (activeService) {
 		  proceedButton.disabled = false;
@@ -181,43 +163,70 @@
 		  proceedButton.disabled = true;
 		}
 	  }
-
+	
 	  function printSummary() {
 		let serviceName = activeService ? activeService.getAttribute('data-service') : 'None';
 		let startDate = document.getElementById('startDate').value;
-
+		
+		// Log recurring value to check if it's being captured correctly
+		console.log(`Is Recurring Checked: ${recurring}`);
+	  
+		// Trial Period Logic
+		let trialPeriodDays = 0;
+		if (recurring) {
+		  const today = new Date();
+		  const selectedDate = new Date(startDate);
+		  trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24)); // Calculate days between today and startDate
+		  
+		  // Check for negative trial period
+		  if (trialPeriodDays < 0) {
+			trialPeriodDays = 0;
+		  }
+		  
+		  console.log(`Trial Period: ${trialPeriodDays} day(s)`); // Log the trial period
+		}
+	  
 		let summary = `Selected Service: ${serviceName}\nDays per Week: ${days.toFixed(1)}\nRecurring: ${recurring ? 'Yes' : 'No'}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days).toLocaleString()}`;
 		console.log(summary);
 	  }
-
-	  // Open Design Modal
-	  document.getElementById('learnMoreDesign').addEventListener('click', (e) => {
-		e.preventDefault();
-		document.getElementById('designModal').classList.remove('hidden');
-	  });
-
-	  // Open Design + Code Modal
-	  document.getElementById('learnMoreDesignCode').addEventListener('click', (e) => {
-		e.preventDefault();
-		document.getElementById('designCodeModal').classList.remove('hidden');
-	  });
-
-	  // Close Modals when clicking the Close button
-	  document.getElementById('closeDesignModal').addEventListener('click', () => {
-		document.getElementById('designModal').classList.add('hidden');
-	  });
-
-	  document.getElementById('closeDesignCodeModal').addEventListener('click', () => {
-		document.getElementById('designCodeModal').classList.add('hidden');
-	  });
-
-	  // Close Modal when clicking outside
-	  window.addEventListener('click', (e) => {
-		if (e.target === document.getElementById('designModal')) {
-		  document.getElementById('designModal').classList.add('hidden');
-		} else if (e.target === document.getElementById('designCodeModal')) {
-		  document.getElementById('designCodeModal').classList.add('hidden');
-		}
+	
+	  // Initialize Stripe.js with your publishable key
+	  var stripe = Stripe('pk_live_51PCj8lIHCU1xjU1mJ4ao2rwBnuPauB5BdaAwqGV6v0zOpVy3ZYIkfRyoFurGIHrtSVkfN3mtAjokbIOqt9iVXn9X00awUln3ba'); // Replace with your actual publishable key
+	
+	  // Add event listener to the Proceed to Payment button
+	  proceedButton.addEventListener('click', () => {
+		const recurring = document.getElementById('recurring').checked;
+		let serviceName = activeService ? activeService.getAttribute('data-service') : 'None';
+		let startDate = document.getElementById('startDate').value;
+		let summary = `Selected Service: ${serviceName}, Days per Week: ${days.toFixed(1)}, Recurring: ${recurring ? 'Yes' : 'No'}, Start Date: ${startDate}, Total Price: $${(selectedServiceRate * days).toLocaleString()}`;
+  
+		// Send POST request to server to create checkout session
+		fetch('/create-checkout-session', {
+		  method: 'POST',
+		  headers: {
+			'Content-Type': 'application/json',
+		  },
+		  body: JSON.stringify({
+			amount: selectedServiceRate * days,
+			recurring: recurring,
+			serviceName: serviceName, // Pass the service name here
+			summary: summary, // Pass the summary here
+			startDate: startDate // Pass the selected start date
+		  }),
+		})
+		.then((response) => response.json())
+		.then((session) => {
+		  // Redirect to Stripe Checkout
+		  return stripe.redirectToCheckout({ sessionId: session.id });
+		})
+		.then((result) => {
+		  if (result.error) {
+			alert(result.error.message);
+		  }
+		})
+		.catch((error) => {
+		  console.error('Error:', error);
+		});
 	  });
 	});
   </script>

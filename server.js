@@ -1,24 +1,28 @@
 const express = require('express');
 const app = express();
 
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+// Load environment variables from .env in development and production
+require('dotenv').config();
 
+// Log the current environment
+console.log(`Application is running in ${process.env.NODE_ENV || 'development'} mode.`);
+
+// Use the Stripe Secret Key from environment variables
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
-app.use(express.static('.')); // Serve static files from current directory
+app.use(express.static('.')); // Serve static files from the current directory
 
 app.get('/', (req, res) => {
+  console.log('Index.html is being served.');
   res.sendFile(__dirname + '/index.html');
 });
 
 app.post('/create-checkout-session', async (req, res) => {
   try {
 	const { amount, recurring, summary, startDate, serviceName } = req.body; // Capture the service name, summary, and start date from the request body
-	
+
 	// Calculate the trial period based on the start date
 	const today = new Date();
 	const selectedDate = new Date(startDate); // Start date from the frontend
@@ -76,7 +80,7 @@ app.post('/create-checkout-session', async (req, res) => {
   }
 });
 
-// Update this line to bind to the correct port for Heroku
+// Bind to the correct port for Heroku or local development
 const port = process.env.PORT || 4242;
 app.listen(port, () => {
   console.log(`Running on port ${port}`);
