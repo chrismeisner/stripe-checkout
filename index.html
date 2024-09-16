@@ -93,285 +93,311 @@
   </div>
 
 <script>
-	document.addEventListener('DOMContentLoaded', function() {
-	  // Airtable API details
-	  const airtableApiKey = 'patoo3z7kVSARjlPp.b0dfd418820c7c9e1f28f18fcb9520b87b6ba337f1b60acafa6976d20c9c42d1';
-	  const baseId = 'appi2wYAmw48ldLmy';
-	  const tableName = 'Services';
-	  const apiUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-	  
-	  // Get data from Airtable
-	  async function fetchAirtableData() {
-		try {
-		  const response = await fetch(apiUrl, {
-			headers: {
-			  Authorization: `Bearer ${airtableApiKey}`
+	  document.addEventListener('DOMContentLoaded', function() {
+		// Airtable API details
+		const airtableApiKey = 'patoo3z7kVSARjlPp.b0dfd418820c7c9e1f28f18fcb9520b87b6ba337f1b60acafa6976d20c9c42d1';
+		const baseId = 'appi2wYAmw48ldLmy';
+		const servicesTable = 'Services';
+		const copyTable = 'Copy'; // New table for hero content
+		const servicesApiUrl = `https://api.airtable.com/v0/${baseId}/${servicesTable}`;
+		const copyApiUrl = `https://api.airtable.com/v0/${baseId}/${copyTable}`;
+		
+		// Get hero data from the "Copy" table in Airtable
+		async function fetchHeroContent() {
+		  try {
+			const response = await fetch(copyApiUrl, {
+			  headers: {
+				Authorization: `Bearer ${airtableApiKey}`
+			  }
+			});
+			const data = await response.json();
+			populateHeroContent(data.records);
+		  } catch (error) {
+			console.error('Error fetching hero content:', error);
+		  }
+		}
+		
+		// Function to populate hero section with data from Airtable
+		function populateHeroContent(records) {
+		  // Assuming the first record contains the hero content
+		  const { Title, Intro } = records[0].fields;
+		  document.querySelector('h1').textContent = Title; // Set hero title
+		  document.querySelector('p').textContent = Intro;   // Set intro paragraph
+		}
+	
+		// Get service data from the "Services" table in Airtable
+		async function fetchAirtableData() {
+		  try {
+			const response = await fetch(servicesApiUrl, {
+			  headers: {
+				Authorization: `Bearer ${airtableApiKey}`
+			  }
+			});
+			const data = await response.json();
+			populateServiceCards(data.records);
+		  } catch (error) {
+			console.error('Error fetching Airtable data:', error);
+		  }
+		}
+	
+		// Populate service cards dynamically
+		function populateServiceCards(records) {
+		  records.forEach(record => {
+			const { Side, Title, Rate, Description } = record.fields;
+	
+			// Create card HTML
+			const cardHtml = `
+			  <div data-service="${Title}" data-rate="${Rate}" data-description="${Description}" data-side="${Side}" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
+				<p class="font-medium">${Title}</p>
+				<p class="text-sm mt-1">$${Rate} day rate</p>
+			  </div>
+			  <a href="#" class="text-blue-600 mt-2 inline-block underline learn-more-${Side}">Learn more</a>
+			`;
+	
+			// Insert card into the correct side
+			if (Side === 'A') {
+			  document.getElementById('serviceA').innerHTML = cardHtml;
+			} else if (Side === 'B') {
+			  document.getElementById('serviceB').innerHTML = cardHtml;
 			}
 		  });
-		  const data = await response.json();
-		  populateServiceCards(data.records);
-		} catch (error) {
-		  console.error('Error fetching Airtable data:', error);
+	
+		  addServiceCardEventListeners();
 		}
-	  }
-  
-	  // Populate service cards dynamically
-	  function populateServiceCards(records) {
-		records.forEach(record => {
-		  const { Side, Title, Rate, Description } = record.fields;
-  
-		  // Create card HTML
-		  const cardHtml = `
-			<div data-service="${Title}" data-rate="${Rate}" data-description="${Description}" data-side="${Side}" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
-			  <p class="font-medium">${Title}</p>
-			  <p class="text-sm mt-1">$${Rate} day rate</p>
-			</div>
-			<a href="#" class="text-blue-600 mt-2 inline-block underline learn-more-${Side}">Learn more</a>
-		  `;
-  
-		  // Insert card into the correct side
-		  if (Side === 'A') {
-			document.getElementById('serviceA').innerHTML = cardHtml;
-		  } else if (Side === 'B') {
-			document.getElementById('serviceB').innerHTML = cardHtml;
+	
+		// Load Airtable data on page load
+		fetchHeroContent();  // Fetch hero content
+		fetchAirtableData(); // Fetch service data
+	
+		// Variables to keep track of selected services
+		let selectedServiceA = null;
+		let selectedServiceB = null;
+		let selectedServiceRate = 0;
+		let days = 1.0;
+		let recurring = false;
+	
+		const daysElement = document.getElementById('days');
+		const totalPriceElement = document.getElementById('totalPrice');
+		const startDateSection = document.getElementById('startDateSection');
+		const proceedButton = document.getElementById('proceedToPayment');
+		const startDateElement = document.getElementById('startDate');
+	
+		proceedButton.disabled = true;
+	
+		// Function to add event listeners for the service options
+		function addServiceCardEventListeners() {
+		  document.querySelectorAll('.service-option').forEach(option => {
+			option.addEventListener('click', () => {
+			  const side = option.getAttribute('data-side');
+	
+			  // If side A is selected, deselect side B and vice versa
+			  if (side === 'A') {
+				if (selectedServiceB) {
+				  deselectService(selectedServiceB, 'B');
+				}
+				if (selectedServiceA === option) {
+				  deselectService(option, 'A');
+				} else {
+				  selectService(option, 'A');
+				}
+			  } else if (side === 'B') {
+				if (selectedServiceA) {
+				  deselectService(selectedServiceA, 'A');
+				}
+				if (selectedServiceB === option) {
+				  deselectService(option, 'B');
+				} else {
+				  selectService(option, 'B');
+				}
+			  }
+	
+			  toggleProceedButton();
+			  updateTotalPrice();
+			  printSummary();
+			});
+		  });
+	
+		  // Add event listeners to the 'Learn more' buttons for modals
+		  document.querySelector('.learn-more-A').addEventListener('click', function(e) {
+			e.preventDefault();
+			const selectedService = document.querySelector('.service-option[data-side="A"]');
+			showModal('modalDesign', selectedService.getAttribute('data-description'));
+		  });
+	
+		  document.querySelector('.learn-more-B').addEventListener('click', function(e) {
+			e.preventDefault();
+			const selectedService = document.querySelector('.service-option[data-side="B"]');
+			showModal('modalDesignCode', selectedService.getAttribute('data-description'));
+		  });
+		}
+	
+		// Select service
+		function selectService(option, side) {
+		  if (side === 'A') {
+			selectedServiceA = option;
+		  } else if (side === 'B') {
+			selectedServiceB = option;
 		  }
-		});
-  
-		addServiceCardEventListeners();
-	  }
-  
-	  // Load Airtable data on page load
-	  fetchAirtableData();
-  
-	  // Variables to keep track of selected services
-	  let selectedServiceA = null;
-	  let selectedServiceB = null;
-	  let selectedServiceRate = 0;
-	  let days = 1.0;
-	  let recurring = false;
-  
-	  const daysElement = document.getElementById('days');
-	  const totalPriceElement = document.getElementById('totalPrice');
-	  const startDateSection = document.getElementById('startDateSection');
-	  const proceedButton = document.getElementById('proceedToPayment');
-	  const startDateElement = document.getElementById('startDate');
-  
-	  proceedButton.disabled = true;
-  
-	  // Function to add event listeners for the service options
-	  function addServiceCardEventListeners() {
-		document.querySelectorAll('.service-option').forEach(option => {
-		  option.addEventListener('click', () => {
-			const side = option.getAttribute('data-side');
-  
-			// If side A is selected, deselect side B and vice versa
-			if (side === 'A') {
-			  if (selectedServiceB) {
-				deselectService(selectedServiceB, 'B');
-			  }
-			  if (selectedServiceA === option) {
-				deselectService(option, 'A');
-			  } else {
-				selectService(option, 'A');
-			  }
-			} else if (side === 'B') {
-			  if (selectedServiceA) {
-				deselectService(selectedServiceA, 'A');
-			  }
-			  if (selectedServiceB === option) {
-				deselectService(option, 'B');
-			  } else {
-				selectService(option, 'B');
-			  }
-			}
-  
-			toggleProceedButton();
+	
+		  option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
+		  selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
+		  document.getElementById('daysSection').classList.remove('hidden');
+		  startDateSection.classList.remove('hidden');
+		}
+	
+		// Deselect service
+		function deselectService(option, side) {
+		  option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
+		  if (side === 'A') {
+			selectedServiceA = null;
+		  } else if (side === 'B') {
+			selectedServiceB = null;
+		  }
+	
+		  if (!selectedServiceA && !selectedServiceB) {
+			document.getElementById('daysSection').classList.add('hidden');
+			startDateSection.classList.add('hidden');
+		  }
+	
+		  resetServiceSelection();
+		}
+	
+		document.getElementById('increase').addEventListener('click', () => {
+		  if (days < 5) {
+			days += 0.5;
+			daysElement.textContent = days.toFixed(1);
 			updateTotalPrice();
 			printSummary();
+		  }
+		});
+	
+		document.getElementById('decrease').addEventListener('click', () => {
+		  if (days > 0.5) {
+			days -= 0.5;
+			daysElement.textContent = days.toFixed(1);
+			updateTotalPrice();
+			printSummary();
+		  }
+		});
+	
+		document.getElementById('recurring').addEventListener('change', (e) => {
+		  recurring = e.target.checked;
+		  printSummary();
+		});
+	
+		startDateElement.addEventListener('change', (e) => {
+		  printSummary();
+		});
+	
+		function resetServiceSelection() {
+		  selectedServiceRate = 0;
+		  daysElement.textContent = days.toFixed(1);
+		  updateTotalPrice();
+		  toggleProceedButton();
+		}
+	
+		function updateTotalPrice() {
+		  const total = selectedServiceRate * days;
+		  totalPriceElement.textContent = '$' + total.toLocaleString();
+		}
+	
+		function toggleProceedButton() {
+		  if (selectedServiceA || selectedServiceB) {
+			proceedButton.disabled = false;
+		  } else {
+			proceedButton.disabled = true;
+		  }
+		}
+	
+		function printSummary() {
+		  let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
+		  let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
+		  let startDate = document.getElementById('startDate').value;
+	
+		  let trialPeriodDays = 0;
+		  if (recurring) {
+			const today = new Date();
+			const selectedDate = new Date(startDate);
+			trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24));
+			
+			if (trialPeriodDays < 0) {
+			  trialPeriodDays = 0;
+			}
+			
+			console.log(`Trial Period: ${trialPeriodDays} day(s)`);
+		  }
+	
+		  let summary = `Selected Service A: ${serviceNameA}\nSelected Service B: ${serviceNameB}\nDays per Week: ${days.toFixed(1)}\nRecurring: ${recurring ? 'Yes' : 'No'}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days).toLocaleString()}`;
+		  console.log(summary);
+		}
+	
+		// Function to show modals with dynamic content
+		function showModal(modalId, description) {
+		  const modal = document.getElementById(modalId);
+		  modal.querySelector('p').textContent = description; // Set the description in the modal
+		  modal.classList.remove('hidden');
+		}
+	
+		// Stripe payment setup
+		var stripe = Stripe('pk_live_51PCj8lIHCU1xjU1mJ4ao2rwBnuPauB5BdaAwqGV6v0zOpVy3ZYIkfRyoFurGIHrtSVkfN3mtAjokbIOqt9iVXn9X00awUln3ba');
+	
+	proceedButton.addEventListener('click', () => {
+		  const recurring = document.getElementById('recurring').checked;
+		  let serviceName = selectedServiceA ? selectedServiceA.getAttribute('data-service') : selectedServiceB.getAttribute('data-service');
+		  let startDate = document.getElementById('startDate').value;
+		  let summary = `Selected Service: ${serviceName}, Days per Week: ${days.toFixed(1)}, Recurring: ${recurring ? 'Yes' : 'No'}, Start Date: ${startDate}, Total Price: $${(selectedServiceRate * days).toLocaleString()}`;
+		
+		  fetch('/create-checkout-session', {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+			  amount: selectedServiceRate * days,
+			  recurring: recurring,
+			  serviceName: serviceName,
+			  summary: summary,
+			  startDate: startDate
+			}),
+		  })
+		  .then((response) => response.json())  // Ensure that you're getting the session ID
+		  .then((session) => {
+			if (session.id) {
+			  return stripe.redirectToCheckout({ sessionId: session.id });
+			} else {
+			  console.error('Error: No session ID returned from the server.');
+			}
+		  })
+		  .then((result) => {
+			if (result.error) {
+			  alert(result.error.message);
+			}
+		  })
+		  .catch((error) => {
+			console.error('Error:', error);
 		  });
 		});
-  
-		// Add event listeners to the 'Learn more' buttons for modals
-		document.querySelector('.learn-more-A').addEventListener('click', function(e) {
-		  e.preventDefault();
-		  const selectedService = document.querySelector('.service-option[data-side="A"]');
-		  showModal('modalDesign', selectedService.getAttribute('data-description'));
-		});
-  
-		document.querySelector('.learn-more-B').addEventListener('click', function(e) {
-		  e.preventDefault();
-		  const selectedService = document.querySelector('.service-option[data-side="B"]');
-		  showModal('modalDesignCode', selectedService.getAttribute('data-description'));
-		});
-	  }
-  
-	  // Select service
-	  function selectService(option, side) {
-		if (side === 'A') {
-		  selectedServiceA = option;
-		} else if (side === 'B') {
-		  selectedServiceB = option;
-		}
-  
-		option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
-		selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
-		document.getElementById('daysSection').classList.remove('hidden');
-		startDateSection.classList.remove('hidden');
-	  }
-  
-	  // Deselect service
-	  function deselectService(option, side) {
-		option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
-		if (side === 'A') {
-		  selectedServiceA = null;
-		} else if (side === 'B') {
-		  selectedServiceB = null;
-		}
-  
-		if (!selectedServiceA && !selectedServiceB) {
-		  document.getElementById('daysSection').classList.add('hidden');
-		  startDateSection.classList.add('hidden');
-		}
-  
-		resetServiceSelection();
-	  }
-  
-	  document.getElementById('increase').addEventListener('click', () => {
-		if (days < 5) {
-		  days += 0.5;
-		  daysElement.textContent = days.toFixed(1);
-		  updateTotalPrice();
-		  printSummary();
-		}
-	  });
-  
-	  document.getElementById('decrease').addEventListener('click', () => {
-		if (days > 0.5) {
-		  days -= 0.5;
-		  daysElement.textContent = days.toFixed(1);
-		  updateTotalPrice();
-		  printSummary();
-		}
-	  });
-  
-	  document.getElementById('recurring').addEventListener('change', (e) => {
-		recurring = e.target.checked;
-		printSummary();
-	  });
-  
-	  startDateElement.addEventListener('change', (e) => {
-		printSummary();
-	  });
-  
-	  function resetServiceSelection() {
-		selectedServiceRate = 0;
-		daysElement.textContent = days.toFixed(1);
-		updateTotalPrice();
-		toggleProceedButton();
-	  }
-  
-	  function updateTotalPrice() {
-		const total = selectedServiceRate * days;
-		totalPriceElement.textContent = '$' + total.toLocaleString();
-	  }
-  
-	  function toggleProceedButton() {
-		if (selectedServiceA || selectedServiceB) {
-		  proceedButton.disabled = false;
-		} else {
-		  proceedButton.disabled = true;
-		}
-	  }
-  
-	  function printSummary() {
-		let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
-		let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
-		let startDate = document.getElementById('startDate').value;
-  
-		let trialPeriodDays = 0;
-		if (recurring) {
-		  const today = new Date();
-		  const selectedDate = new Date(startDate);
-		  trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24));
-		  
-		  if (trialPeriodDays < 0) {
-			trialPeriodDays = 0;
-		  }
-		  
-		  console.log(`Trial Period: ${trialPeriodDays} day(s)`);
-		}
-  
-		let summary = `Selected Service A: ${serviceNameA}\nSelected Service B: ${serviceNameB}\nDays per Week: ${days.toFixed(1)}\nRecurring: ${recurring ? 'Yes' : 'No'}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days).toLocaleString()}`;
-		console.log(summary);
-	  }
-  
-	  // Function to show modals with dynamic content
-	  function showModal(modalId, description) {
-		const modal = document.getElementById(modalId);
-		modal.querySelector('p').textContent = description; // Set the description in the modal
-		modal.classList.remove('hidden');
-	  }
-  
-	  // Stripe payment setup
-	  var stripe = Stripe('pk_live_51PCj8lIHCU1xjU1mJ4ao2rwBnuPauB5BdaAwqGV6v0zOpVy3ZYIkfRyoFurGIHrtSVkfN3mtAjokbIOqt9iVXn9X00awUln3ba');
-  
-  proceedButton.addEventListener('click', () => {
-		const recurring = document.getElementById('recurring').checked;
-		let serviceName = selectedServiceA ? selectedServiceA.getAttribute('data-service') : selectedServiceB.getAttribute('data-service');
-		let startDate = document.getElementById('startDate').value;
-		let summary = `Selected Service: ${serviceName}, Days per Week: ${days.toFixed(1)}, Recurring: ${recurring ? 'Yes' : 'No'}, Start Date: ${startDate}, Total Price: $${(selectedServiceRate * days).toLocaleString()}`;
-	  
-		fetch('/create-checkout-session', {
-		  method: 'POST',
-		  headers: {
-			'Content-Type': 'application/json',
-		  },
-		  body: JSON.stringify({
-			amount: selectedServiceRate * days,
-			recurring: recurring,
-			serviceName: serviceName,
-			summary: summary,
-			startDate: startDate
-		  }),
-		})
-		.then((response) => response.json())  // Ensure that you're getting the session ID
-		.then((session) => {
-		  if (session.id) {
-			return stripe.redirectToCheckout({ sessionId: session.id });
-		  } else {
-			console.error('Error: No session ID returned from the server.');
-		  }
-		})
-		.then((result) => {
-		  if (result.error) {
-			alert(result.error.message);
-		  }
-		})
-		.catch((error) => {
-		  console.error('Error:', error);
-		});
-	  });
-  
-	  // Close modals
-	  document.getElementById('closeModalDesign').addEventListener('click', function() {
-		document.getElementById('modalDesign').classList.add('hidden');
-	  });
-  
-	  document.getElementById('closeModalDesignCode').addEventListener('click', function() {
-		document.getElementById('modalDesignCode').classList.add('hidden');
-	  });
-  
-	  // Close modal when clicking outside
-	  window.addEventListener('click', function(e) {
-		if (e.target === document.getElementById('modalDesign')) {
+	
+		// Close modals
+		document.getElementById('closeModalDesign').addEventListener('click', function() {
 		  document.getElementById('modalDesign').classList.add('hidden');
-		}
-		if (e.target === document.getElementById('modalDesignCode')) {
+		});
+	
+		document.getElementById('closeModalDesignCode').addEventListener('click', function() {
 		  document.getElementById('modalDesignCode').classList.add('hidden');
-		}
+		});
+	
+		// Close modal when clicking outside
+		window.addEventListener('click', function(e) {
+		  if (e.target === document.getElementById('modalDesign')) {
+			document.getElementById('modalDesign').classList.add('hidden');
+		  }
+		  if (e.target === document.getElementById('modalDesignCode')) {
+			document.getElementById('modalDesignCode').classList.add('hidden');
+		  }
+		});
 	  });
-	});
-  </script>
+	</script>
 
 </body>
 </html>
