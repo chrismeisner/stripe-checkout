@@ -21,14 +21,12 @@ app.get('/', (req, res) => {
 
 app.post('/create-checkout-session', async (req, res) => {
   try {
-	const { amount, recurring, summary, startDate, serviceName } = req.body; // Capture the service name, summary, and start date from the request body
+	const { amount, recurring, summary, startDate, serviceName } = req.body;
 
 	// Calculate the trial period based on the start date
 	const today = new Date();
-	const selectedDate = new Date(startDate); // Start date from the frontend
-	let trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24)); // Calculate the days between today and the selected start date
-
-	// Ensure trialPeriodDays is non-negative
+	const selectedDate = new Date(startDate);
+	let trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24));
 	if (trialPeriodDays < 0) {
 	  trialPeriodDays = 0;
 	}
@@ -41,8 +39,8 @@ app.post('/create-checkout-session', async (req, res) => {
 		  currency: 'usd',
 		  unit_amount: Math.round(amount * 100), // amount in cents
 		  product_data: {
-			name: serviceName, // Dynamically set the service name
-			description: summary, // Add summary to be displayed on the checkout page
+			name: serviceName,
+			description: summary,
 		  },
 		},
 		quantity: 1,
@@ -51,7 +49,12 @@ app.post('/create-checkout-session', async (req, res) => {
 	  success_url: `${req.headers.origin}/success.html`,
 	  cancel_url: `${req.headers.origin}/cancel.html`,
 	  metadata: {
-		summary: summary, // Keep it in metadata for internal reference
+		summary: summary,
+		service_name: serviceName,
+		start_date: startDate,
+		recurring: recurring ? 'Yes' : 'No',
+		total_price: `$${(amount).toLocaleString()}`,
+		trial_period_days: trialPeriodDays
 	  },
 	};
 
@@ -66,7 +69,7 @@ app.post('/create-checkout-session', async (req, res) => {
 	  // Add the trial period for the subscription
 	  if (trialPeriodDays > 0) {
 		sessionParams.subscription_data = {
-		  trial_period_days: trialPeriodDays, // Set the trial period in days
+		  trial_period_days: trialPeriodDays,
 		};
 	  }
 	}
