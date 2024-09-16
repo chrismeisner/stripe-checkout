@@ -1,78 +1,98 @@
 const express = require('express');
 const app = express();
+const fetch = require('node-fetch');
 
-// Load environment variables from .env in development and production
+// Load environment variables from .env
 require('dotenv').config();
 
-// Log the current environment
-console.log(`Application is running in ${process.env.NODE_ENV || 'development'} mode.`);
-
-// Use the Stripe Secret Key from environment variables
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const AIRTABLE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`;
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
-app.use(express.static('.')); // Serve static files from the current directory
+app.use(express.static('.')); 
 
+// Serve index.html
 app.get('/', (req, res) => {
-  console.log('Index.html is being served.');
   res.sendFile(__dirname + '/index.html');
 });
 
+// API route to get hero content
+app.get('/api/hero-content', async (req, res) => {
+  try {
+	const response = await fetch(`${AIRTABLE_URL}/Copy`, {
+	  headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+	});
+	const data = await response.json();
+	res.json(data);
+  } catch (error) {
+	console.error('Error fetching hero content:', error);
+	res.status(500).json({ error: 'Failed to fetch hero content' });
+  }
+});
+
+// API route to get service data
+app.get('/api/services', async (req, res) => {
+  try {
+	const response = await fetch(`${AIRTABLE_URL}/Services`, {
+	  headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+	});
+	const data = await response.json();
+	res.json(data);
+  } catch (error) {
+	console.error('Error fetching services:', error);
+	res.status(500).json({ error: 'Failed to fetch services' });
+  }
+});
+
+// Stripe checkout session
 app.post('/create-checkout-session', async (req, res) => {
   try {
-	const { amount, recurring, summary, startDate, serviceName } = req.body; // Capture the service name, summary, and start date from the request body
-
-	// Calculate the trial period based on the start date
+	const { amount, recurring, serviceName, startDate } = req.body;
 	const today = new Date();
-	const selectedDate = new Date(startDate); // Start date from the frontend
-	let trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24)); // Calculate the days between today and the selected start date
+	const selectedDate = new Date(startDate);
+	let trialPeriodDays = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24));
 
-	// Ensure trialPeriodDays is non-negative
-	if (trialPeriodDays < 0) {
-	  trialPeriodDays = 0;
-	}
+	trialPeriodDays = trialPeriodDays < 0 ? 0 : trialPeriodDays;
 
-	// Create a new Checkout Session for the order
-	let sessionParams = {
+const sessionParams = {
 	  payment_method_types: ['card'],
 	  line_items: [{
 		price_data: {
 		  currency: 'usd',
-		  unit_amount: Math.round(amount * 100), // amount in cents
-		  product_data: {
-			name: serviceName, // Dynamically set the service name
-			description: summary, // Add summary to be displayed on the checkout page
-		  },
+		  unit_amount: Math.round(amount * 100),
+		  product_data: { name: serviceName },
 		},
 		quantity: 1,
 	  }],
-	  mode: 'payment',
+	  mode: recurring ? 'subscription' : 'payment',
 	  success_url: `${req.headers.origin}/success.html`,
 	  cancel_url: `${req.headers.origin}/cancel.html`,
-	  metadata: {
-		summary: summary, // Keep it in metadata for internal reference
+	  metadata: {   // Add custom metadata here
+		summary: summary,
+		startDate: startDate,
+		days: days,
+		recurring: recurring ? 'Yes' : 'No'
 	  },
 	};
 
-	// If recurring is true, set up a subscription
 	if (recurring) {
-	  sessionParams.mode = 'subscription';
 	  sessionParams.line_items[0].price_data.recurring = {
 		interval: 'week',
 		interval_count: 1,
 	  };
 
-	  // Add the trial period for the subscription
 	  if (trialPeriodDays > 0) {
 		sessionParams.subscription_data = {
-		  trial_period_days: trialPeriodDays, // Set the trial period in days
+		  trial_period_days: trialPeriodDays,
 		};
 	  }
 	}
 
 	const session = await stripe.checkout.sessions.create(sessionParams);
-
 	res.json({ id: session.id });
   } catch (error) {
 	console.error(error);
@@ -80,7 +100,6 @@ app.post('/create-checkout-session', async (req, res) => {
   }
 });
 
-// Bind to the correct port for Heroku or local development
 const port = process.env.PORT || 4242;
 app.listen(port, () => {
   console.log(`Running on port ${port}`);
