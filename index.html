@@ -9,13 +9,12 @@
   
   <!-- test line CM -->
   
-<!-- Google tag (gtag.js) -->
+  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ETEC4ZKJ3M"></script>
   <script>
 	window.dataLayer = window.dataLayer || [];
 	function gtag(){dataLayer.push(arguments);}
 	gtag('js', new Date());
-  
 	gtag('config', 'G-ETEC4ZKJ3M');
   </script>
   
@@ -31,21 +30,10 @@
 
 	<div>
 	  <h2 class="font-semibold text-lg mb-2">Available Services:</h2>
-	  <div id="serviceSelection" class="grid grid-cols-2 gap-4"> <!-- Always 2 columns, even on mobile -->
-		<div>
-		  <div data-service="Design" data-rate="1000" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
-			<p class="font-medium">Design</p>
-			<p class="text-sm mt-1">$1,000 day rate</p>
-		  </div>
-		  <a href="#" class="text-blue-600 mt-2 inline-block underline" id="learnMoreDesign">Learn more</a> <!-- Trigger for the modal -->
-		</div>
-		<div>
-		  <div data-service="Design+Code" data-rate="1200" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
-			<p class="font-medium">Design + Code</p>
-			<p class="text-sm mt-1">$1,200 day rate</p>
-		  </div>
-		  <a href="#" class="text-blue-600 mt-2 inline-block underline" id="learnMoreDesignCode">Learn more</a> <!-- Trigger for the modal -->
-		</div>
+	  <div id="serviceSelection" class="grid grid-cols-2 gap-4"> 
+		<!-- Dynamic Service Cards will be inserted here -->
+		<div id="serviceA"></div>
+		<div id="serviceB"></div>
 	  </div>
 
 	  <div class="mt-6 hidden" id="daysSection">
@@ -106,10 +94,60 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-	const serviceOptions = document.querySelectorAll('.service-option');
+	// Airtable API details
+	const airtableApiKey = 'patoo3z7kVSARjlPp.b0dfd418820c7c9e1f28f18fcb9520b87b6ba337f1b60acafa6976d20c9c42d1';
+	const baseId = 'appi2wYAmw48ldLmy';
+	const tableName = 'Services';
+	const apiUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+	
+	// Get data from Airtable
+	async function fetchAirtableData() {
+	  try {
+		const response = await fetch(apiUrl, {
+		  headers: {
+			Authorization: `Bearer ${airtableApiKey}`
+		  }
+		});
+		const data = await response.json();
+		populateServiceCards(data.records);
+	  } catch (error) {
+		console.error('Error fetching Airtable data:', error);
+	  }
+	}
+
+	// Populate service cards dynamically
+	function populateServiceCards(records) {
+	  records.forEach(record => {
+		const { Side, Title, Rate } = record.fields;
+
+		// Create card HTML
+		const cardHtml = `
+		  <div data-service="${Title}" data-rate="${Rate}" data-side="${Side}" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
+			<p class="font-medium">${Title}</p>
+			<p class="text-sm mt-1">$${Rate} day rate</p>
+		  </div>
+		  <a href="#" class="text-blue-600 mt-2 inline-block underline learn-more-${Side}">Learn more</a>
+		`;
+
+		// Insert card into the correct side
+		if (Side === 'A') {
+		  document.getElementById('serviceA').innerHTML = cardHtml;
+		} else if (Side === 'B') {
+		  document.getElementById('serviceB').innerHTML = cardHtml;
+		}
+	  });
+
+	  addServiceCardEventListeners();
+	}
+
+	// Load Airtable data on page load
+	fetchAirtableData();
+
+	// Variables to keep track of selected services
+	let selectedServiceA = null;
+	let selectedServiceB = null;
 	let selectedServiceRate = 0;
 	let days = 1.0;
-	let activeService = null;
 	let recurring = false;
 
 	const daysElement = document.getElementById('days');
@@ -120,43 +158,81 @@
 
 	proceedButton.disabled = true;
 
-	// Modal elements
-	const modalDesign = document.getElementById('modalDesign');
-	const modalDesignCode = document.getElementById('modalDesignCode');
-	const learnMoreDesign = document.getElementById('learnMoreDesign');
-	const learnMoreDesignCode = document.getElementById('learnMoreDesignCode');
-	const closeModalDesign = document.getElementById('closeModalDesign');
-	const closeModalDesignCode = document.getElementById('closeModalDesignCode');
+	// Function to add event listeners for the service options
+	function addServiceCardEventListeners() {
+	  document.querySelectorAll('.service-option').forEach(option => {
+		option.addEventListener('click', () => {
+		  const side = option.getAttribute('data-side');
 
-	// Open modals
-	learnMoreDesign.addEventListener('click', function(e) {
-	  e.preventDefault();
-	  modalDesign.classList.remove('hidden');
-	});
+		  // If side A is selected, deselect side B and vice versa
+		  if (side === 'A') {
+			if (selectedServiceB) {
+			  deselectService(selectedServiceB, 'B');
+			}
+			if (selectedServiceA === option) {
+			  deselectService(option, 'A');
+			} else {
+			  selectService(option, 'A');
+			}
+		  } else if (side === 'B') {
+			if (selectedServiceA) {
+			  deselectService(selectedServiceA, 'A');
+			}
+			if (selectedServiceB === option) {
+			  deselectService(option, 'B');
+			} else {
+			  selectService(option, 'B');
+			}
+		  }
 
-	learnMoreDesignCode.addEventListener('click', function(e) {
-	  e.preventDefault();
-	  modalDesignCode.classList.remove('hidden');
-	});
+		  toggleProceedButton();
+		  updateTotalPrice();
+		  printSummary();
+		});
+	  });
 
-	// Close modals when clicking on close button
-	closeModalDesign.addEventListener('click', function() {
-	  modalDesign.classList.add('hidden');
-	});
+	  // Add event listeners to the 'Learn more' buttons for modals
+	  document.querySelector('.learn-more-A').addEventListener('click', function(e) {
+		e.preventDefault();
+		document.getElementById('modalDesign').classList.remove('hidden');
+	  });
 
-	closeModalDesignCode.addEventListener('click', function() {
-	  modalDesignCode.classList.add('hidden');
-	});
+	  document.querySelector('.learn-more-B').addEventListener('click', function(e) {
+		e.preventDefault();
+		document.getElementById('modalDesignCode').classList.remove('hidden');
+	  });
+	}
 
-	// Close modal when clicking outside
-	window.addEventListener('click', function(e) {
-	  if (e.target === modalDesign) {
-		modalDesign.classList.add('hidden');
+	// Select service
+	function selectService(option, side) {
+	  if (side === 'A') {
+		selectedServiceA = option;
+	  } else if (side === 'B') {
+		selectedServiceB = option;
 	  }
-	  if (e.target === modalDesignCode) {
-		modalDesignCode.classList.add('hidden');
+
+	  option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
+	  selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
+	  document.getElementById('daysSection').classList.remove('hidden');
+	  startDateSection.classList.remove('hidden');
+	}
+
+	// Deselect service
+	function deselectService(option, side) {
+	  option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
+	  if (side === 'A') {
+		selectedServiceA = null;
+	  } else if (side === 'B') {
+		selectedServiceB = null;
 	  }
-	});
+
+	  if (!selectedServiceA && !selectedServiceB) {
+		document.getElementById('daysSection').classList.add('hidden');
+		startDateSection.classList.add('hidden');
+	  }
+
+	  resetServiceSelection();
+	}
 
 	document.getElementById('increase').addEventListener('click', () => {
 	  if (days < 5) {
@@ -174,32 +250,6 @@
 		updateTotalPrice();
 		printSummary();
 	  }
-	});
-
-	serviceOptions.forEach(option => {
-	  option.addEventListener('click', () => {
-		const isActive = option === activeService;
-
-		if (isActive) {
-		  option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
-		  document.getElementById('daysSection').classList.add('hidden');
-		  startDateSection.classList.add('hidden');
-		  activeService = null;
-		  resetServiceSelection();
-		} else {
-		  serviceOptions.forEach(opt => opt.classList.remove('selected', 'bg-blue-100', 'border-blue-500'));
-		  option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
-
-		  selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
-		  daysElement.textContent = days.toFixed(1);
-		  document.getElementById('daysSection').classList.remove('hidden');
-		  startDateSection.classList.remove('hidden');
-		  activeService = option;
-		}
-		toggleProceedButton();
-		updateTotalPrice();
-		printSummary();
-	  });
 	});
 
 	document.getElementById('recurring').addEventListener('change', (e) => {
@@ -224,7 +274,7 @@
 	}
 
 	function toggleProceedButton() {
-	  if (activeService) {
+	  if (selectedServiceA || selectedServiceB) {
 		proceedButton.disabled = false;
 	  } else {
 		proceedButton.disabled = true;
@@ -232,7 +282,8 @@
 	}
 
 	function printSummary() {
-	  let serviceName = activeService ? activeService.getAttribute('data-service') : 'None';
+	  let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
+	  let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
 	  let startDate = document.getElementById('startDate').value;
 
 	  let trialPeriodDays = 0;
@@ -248,18 +299,19 @@
 		console.log(`Trial Period: ${trialPeriodDays} day(s)`);
 	  }
 
-	  let summary = `Selected Service: ${serviceName}\nDays per Week: ${days.toFixed(1)}\nRecurring: ${recurring ? 'Yes' : 'No'}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days).toLocaleString()}`;
+	  let summary = `Selected Service A: ${serviceNameA}\nSelected Service B: ${serviceNameB}\nDays per Week: ${days.toFixed(1)}\nRecurring: ${recurring ? 'Yes' : 'No'}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days).toLocaleString()}`;
 	  console.log(summary);
 	}
 
+	// Stripe payment setup
 	var stripe = Stripe('pk_live_51PCj8lIHCU1xjU1mJ4ao2rwBnuPauB5BdaAwqGV6v0zOpVy3ZYIkfRyoFurGIHrtSVkfN3mtAjokbIOqt9iVXn9X00awUln3ba');
 
-	proceedButton.addEventListener('click', () => {
+proceedButton.addEventListener('click', () => {
 	  const recurring = document.getElementById('recurring').checked;
-	  let serviceName = activeService ? activeService.getAttribute('data-service') : 'None';
+	  let serviceName = selectedServiceA ? selectedServiceA.getAttribute('data-service') : selectedServiceB.getAttribute('data-service');
 	  let startDate = document.getElementById('startDate').value;
 	  let summary = `Selected Service: ${serviceName}, Days per Week: ${days.toFixed(1)}, Recurring: ${recurring ? 'Yes' : 'No'}, Start Date: ${startDate}, Total Price: $${(selectedServiceRate * days).toLocaleString()}`;
-
+	
 	  fetch('/create-checkout-session', {
 		method: 'POST',
 		headers: {
@@ -273,9 +325,13 @@
 		  startDate: startDate
 		}),
 	  })
-	  .then((response) => response.json())
+	  .then((response) => response.json())  // Ensure that you're getting the session ID
 	  .then((session) => {
-		return stripe.redirectToCheckout({ sessionId: session.id });
+		if (session.id) {
+		  return stripe.redirectToCheckout({ sessionId: session.id });
+		} else {
+		  console.error('Error: No session ID returned from the server.');
+		}
 	  })
 	  .then((result) => {
 		if (result.error) {
@@ -285,6 +341,25 @@
 	  .catch((error) => {
 		console.error('Error:', error);
 	  });
+	});
+
+	// Close modals
+	document.getElementById('closeModalDesign').addEventListener('click', function() {
+	  document.getElementById('modalDesign').classList.add('hidden');
+	});
+
+	document.getElementById('closeModalDesignCode').addEventListener('click', function() {
+	  document.getElementById('modalDesignCode').classList.add('hidden');
+	});
+
+	// Close modal when clicking outside
+	window.addEventListener('click', function(e) {
+	  if (e.target === document.getElementById('modalDesign')) {
+		document.getElementById('modalDesign').classList.add('hidden');
+	  }
+	  if (e.target === document.getElementById('modalDesignCode')) {
+		document.getElementById('modalDesignCode').classList.add('hidden');
+	  }
 	});
   });
 </script>
