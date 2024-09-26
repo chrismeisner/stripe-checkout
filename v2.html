@@ -82,6 +82,11 @@
 		  <span id="weeks" class="text-xl font-semibold">1</span>
 		  <button type="button" id="increaseWeeks" class="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 hover:bg-gray-400 rounded-full text-xl flex justify-center items-center">+</button>
 		</div>
+
+		<!-- New line to show calculated end date -->
+		<div class="mt-2" id="endDateContainer">
+		  <p class="text-sm text-gray-700">Estimated project end date: <span id="endDate" class="font-semibold">N/A</span></p>
+		</div>
 	  </div>
 
 	  <div class="mt-6">
@@ -333,6 +338,69 @@
 		// Call the function to populate the start date options on page load
 		populateStartDateOptions();
 
+		// Function to calculate the Friday of the last week
+		function calculateEndDate(startDate, weeks) {
+		  const start = new Date(startDate);
+		  
+		  // Calculate the number of days to the Friday of the last week
+		  const totalDays = (weeks * 7) - 2; // Monday + (weeks * 7) - 3 days to get to Friday
+		  const endDate = new Date(start);
+		  endDate.setDate(start.getDate() + totalDays);
+		  
+		  return endDate;
+		}
+
+		// Function to format the end date as 'Friday, Month Day, Year'
+		function formatEndDate(date) {
+		  return date.toLocaleDateString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric'
+		  });
+		}
+
+		// Update the end date display
+		function updateEndDate() {
+		  const startDate = document.getElementById('startDate').value;
+		  
+		  if (startDate && weeks > 0) {
+			const endDate = calculateEndDate(startDate, weeks);
+			document.getElementById('endDate').textContent = formatEndDate(endDate);
+		  } else {
+			document.getElementById('endDate').textContent = 'N/A';
+		  }
+		}
+
+		// Add event listeners to update the end date when the weeks or start date changes
+		startDateElement.addEventListener('change', updateEndDate);
+
+		// Also call updateEndDate after updating the total price to ensure the end date is always accurate
+		document.getElementById('increaseWeeks').addEventListener('click', () => {
+		  if (weeks < 52) {
+			weeks += 1;
+			weeksElement.textContent = weeks;
+			updateTotalPrice();
+			printSummary();
+			updateEndDate(); // Update end date when weeks change
+		  }
+		});
+
+		document.getElementById('decreaseWeeks').addEventListener('click', () => {
+		  if (weeks > 1) {
+			weeks -= 1;
+			weeksElement.textContent = weeks;
+			updateTotalPrice();
+			printSummary();
+			updateEndDate(); // Update end date when weeks change
+		  }
+		});
+
+		startDateElement.addEventListener('change', (e) => {
+		  printSummary();
+		  updateEndDate(); // Update end date when start date changes
+		});
+
 		// Function to add event listeners for the service options
 		function addServiceCardEventListeners() {
 		  document.querySelectorAll('.service-option').forEach(option => {
@@ -431,27 +499,10 @@
 		  }
 		});
 	
-		// Increment or decrement the number of weeks
-		document.getElementById('increaseWeeks').addEventListener('click', () => {
-		  if (weeks < 52) {
-			weeks += 1;
-			weeksElement.textContent = weeks;
-			updateTotalPrice();
-			printSummary();
-		  }
-		});
-	
-		document.getElementById('decreaseWeeks').addEventListener('click', () => {
-		  if (weeks > 1) {
-			weeks -= 1;
-			weeksElement.textContent = weeks;
-			updateTotalPrice();
-			printSummary();
-		  }
-		});
 	
 		startDateElement.addEventListener('change', (e) => {
 		  printSummary();
+		  updateEndDate(); // Update end date when start date changes
 		});
 	
 		function resetServiceSelection() {
