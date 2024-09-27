@@ -22,11 +22,6 @@
 	<div class="mb-6">
 	  <h1 class="text-2xl font-bold text-left">Chris Meisner</h1>
 	  <p class="text-gray-700 mt-2 text-left">Intro paragraph, design partner to founders, help founders and startups bring their ideas to life.</p>
-	
-	<!--
-	  <a href="https://cal.com/chrismeisner/intro" target="_blank" class="text-blue-600 mt-4 inline-block underline">Book a discovery call</a>
-	-->
-	
 	</div>
 
 	<!-- New Section: Client Region Dropdown -->
@@ -38,10 +33,6 @@
 	  </select>
 	</div>
 
-	<!-- Removed the duplicate Client Email section -->
-	
-	<!-- Removed the Project Overview section -->
-
 	<div>
 	  <h2 class="font-semibold text-lg mb-2">Available Services:</h2>
 	  
@@ -51,7 +42,7 @@
 		<div id="serviceA"></div>
 		<div id="serviceB"></div>
 	  </div>
-	
+
 	  <div class="mt-6 hidden" id="daysSection">
 		<h2 class="font-semibold text-lg mb-2">How many days a week do you need me?</h2>
 		<div class="flex justify-start items-center space-x-4">
@@ -60,7 +51,7 @@
 		  <button type="button" id="increase" class="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 hover:bg-gray-400 rounded-full text-xl flex justify-center items-center">+</button>
 		</div>
 	  </div>
-	
+
 	  <div class="mt-6 hidden" id="startDateSection">
 		<h2 class="font-semibold text-lg mb-2">When do you want to get started?</h2>
 		<div>
@@ -69,7 +60,7 @@
 		  </select>
 		</div>
 	  </div>
-	
+
 	  <!-- New Section: Weeks Counter -->
 	  <div class="mt-6 hidden" id="weeksSection">
 		<h2 class="font-semibold text-lg mb-2">How many weeks do you want to jam for?</h2>
@@ -78,36 +69,34 @@
 		  <span id="weeks" class="text-xl font-semibold">1</span>
 		  <button type="button" id="increaseWeeks" class="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 hover:bg-gray-400 rounded-full text-xl flex justify-center items-center">+</button>
 		</div>
-	
+
 		<!-- New line to show calculated end date -->
 		<div class="mt-2" id="endDateContainer">
 		  <p class="text-sm text-gray-700">Estimated project end date: <span id="endDate" class="font-semibold">N/A</span></p>
 		</div>
 	  </div>
-	
+
 	  <div class="mt-6">
 		<p class="text-3xl font-bold" id="totalPrice">$0</p>
 		<p class="text-lg">Project Quote</p> <!-- Updated from "Per Week" to "Project Quote" -->
-	
+
 		<!-- Moved Client Email Section -->
 		<div class="mb-6 mt-6">
-		  <h2 class="font-semibold text-lg mb-2">Email</h2>
+		  <h2 class="font-semibold text-lg mb-2">Client Email</h2>
 		  <input type="email" id="clientEmail" class="bg-gray-100 p-2 rounded w-full" placeholder="Enter your email" required>
+		  <span id="emailError" class="text-red-500 text-sm hidden">Please enter a valid email address.</span> <!-- Error message -->
 		</div>
-	
-		<!-- Updated button text -->
+
 		<div class="mt-6">
-		  <button type="button" id="scheduleKickoff" class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-			Send Quote
-		  </button>
-		  <p class="text-sm text-gray-500 mt-2">Email a copy of the quote above</p>
+		  <button type="button" id="scheduleKickoff" class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Save Estimate</button>
+		  <p class="text-sm text-gray-500 mt-2">Email yourself a copy of the above</p>
 		</div>
-	
+
 		<!-- Save Draft Button and Helper Text -->
 		<div class="mt-6">
-		  <button type="button" id="saveDraft" class="w-full bg-gray-500 text-white p-3 rounded-md font-semibold hover:bg-gray-600 transition-colors">
-			Schedule a discovery call
-		  </button>
+		  <a href="https://cal.com/chrismeisner/intro" target="_blank">
+			<button type="button" class="w-full bg-gray-500 text-white p-3 rounded-md font-semibold hover:bg-gray-600 transition-colors">Schedule a Discovery Call</button>
+		  </a>
 		  <p class="text-sm text-gray-500 mt-2">Talk directly with Chris to answer any questions and scope your collaboration</p>
 		</div>
 	  </div>
@@ -134,446 +123,524 @@
   </div>
 
 <script>
-		document.addEventListener('DOMContentLoaded', function() {
-		  // Airtable API details
-		  const airtableApiKey = 'patoo3z7kVSARjlPp.b0dfd418820c7c9e1f28f18fcb9520b87b6ba337f1b60acafa6976d20c9c42d1';
-		  const baseId = 'appi2wYAmw48ldLmy';
-		  const servicesTable = 'Services';
-		  const regionsTable = 'Regions';  // New table for Regions
-		  const submissionsTable = 'Submissions'; // Table for submissions
-		  const copyTable = 'Copy'; // New table for hero content
-		  const servicesApiUrl = `https://api.airtable.com/v0/${baseId}/${servicesTable}`;
-		  const regionsApiUrl = `https://api.airtable.com/v0/${baseId}/${regionsTable}`;  // Regions API
-		  const submissionsApiUrl = `https://api.airtable.com/v0/${baseId}/${submissionsTable}`;
-		  const copyApiUrl = `https://api.airtable.com/v0/${baseId}/${copyTable}`;
-		  
-		  let selectedMultiplier = 1;  // Default multiplier
-		  let servicesData = {};  // Store initial rates
-  
-		  // Get hero data from the "Copy" table in Airtable
-		  async function fetchHeroContent() {
-			try {
-			  const response = await fetch(copyApiUrl, {
-				headers: {
-				  Authorization: `Bearer ${airtableApiKey}`
-				}
-			  });
-			  const data = await response.json();
-			  populateHeroContent(data.records);
-			} catch (error) {
-			  console.error('Error fetching hero content:', error);
-			}
-		  }
-		  
-		  // Function to populate hero section with data from Airtable
-		  function populateHeroContent(records) {
-			const { Title, Intro } = records[0].fields;
-			document.querySelector('h1').textContent = Title;
-			document.querySelector('p').textContent = Intro;
-		  }
-  
-		  // Get region data from the "Regions" table in Airtable and populate the dropdown
-		  async function fetchRegions() {
-			try {
-			  const response = await fetch(regionsApiUrl, {
-				headers: {
-				  Authorization: `Bearer ${airtableApiKey}`
-				}
-			  });
-			  const data = await response.json();
-			  populateRegionsDropdown(data.records);
-			} catch (error) {
-			  console.error('Error fetching regions:', error);
-			}
-		  }
-  
-  // Function to populate region dropdown
-		  function populateRegionsDropdown(records) {
-			const clientRegionSelect = document.getElementById('clientRegion');
-			
-			// Sort regions by name (ascending order, A-Z)
-			const sortedRecords = records.sort((a, b) => a.fields.Name.localeCompare(b.fields.Name));
-		  
-			let newYorkOption = null;
-			sortedRecords.forEach(record => {
-			  const option = document.createElement('option');
-			  option.value = record.fields.Multiplier;  // Use Multiplier as value
-			  option.textContent = record.fields.Name;  // Display "Name" field in the dropdown
-			  clientRegionSelect.appendChild(option);
-		  
-			  // Set default selection to "New York 🗽" if present
-			  if (record.fields.Name === 'New York 🗽') {
-				newYorkOption = option;
+	  document.addEventListener('DOMContentLoaded', function() {
+		// Airtable API details
+		const airtableApiKey = 'patoo3z7kVSARjlPp.b0dfd418820c7c9e1f28f18fcb9520b87b6ba337f1b60acafa6976d20c9c42d1';
+		const baseId = 'appi2wYAmw48ldLmy';
+		const servicesTable = 'Services';
+		const regionsTable = 'Regions';  // New table for Regions
+		const submissionsTable = 'Submissions'; // Table for submissions
+		const copyTable = 'Copy'; // New table for hero content
+		const servicesApiUrl = `https://api.airtable.com/v0/${baseId}/${servicesTable}`;
+		const regionsApiUrl = `https://api.airtable.com/v0/${baseId}/${regionsTable}`;  // Regions API
+		const submissionsApiUrl = `https://api.airtable.com/v0/${baseId}/${submissionsTable}`;
+		const copyApiUrl = `https://api.airtable.com/v0/${baseId}/${copyTable}`;
+		
+		let selectedMultiplier = 1;  // Default multiplier
+		let servicesData = {};  // Store initial rates
+
+		// Get hero data from the "Copy" table in Airtable
+		async function fetchHeroContent() {
+		  try {
+			const response = await fetch(copyApiUrl, {
+			  headers: {
+				Authorization: `Bearer ${airtableApiKey}`
 			  }
 			});
-		  
-			if (newYorkOption) {
-			  newYorkOption.selected = true;
-			  selectedMultiplier = parseFloat(newYorkOption.value); // Set selectedMultiplier
-			} else {
-			  // Set the first option's multiplier if New York is not found
-			  selectedMultiplier = parseFloat(clientRegionSelect.options[0].value);
-			}
-		  
-			updateServiceRates(); // Update service rates after setting the region
+			const data = await response.json();
+			populateHeroContent(data.records);
+		  } catch (error) {
+			console.error('Error fetching hero content:', error);
 		  }
-  
-		  // Event listener for region selection to update the multiplier and day rates
-		  document.getElementById('clientRegion').addEventListener('change', function(e) {
-			selectedMultiplier = parseFloat(e.target.value);
-			updateServiceRates();
-			updateTotalPrice();
-		  });
-  
-		  // Fetch regions and populate the dropdown on page load
-		  fetchRegions();
-  
-		  // Get service data from the "Services" table in Airtable
-		  async function fetchAirtableData() {
-			try {
-			  const response = await fetch(servicesApiUrl, {
-				headers: {
-				  Authorization: `Bearer ${airtableApiKey}`
-				}
-			  });
-			  const data = await response.json();
-			  populateServiceCards(data.records);
-			} catch (error) {
-			  console.error('Error fetching Airtable data:', error);
-			}
-		  }
-	  
-		  // Populate service cards dynamically
-		  function populateServiceCards(records) {
-			records.forEach(record => {
-			  const { Side, Title, Rate, Description } = record.fields;
-  
-			  // Store initial rates in servicesData
-			  servicesData[Side] = { Title, Rate, Description };
-  
-			  // Create card HTML
-			  const cardHtml = `
-				<div data-service="${Title}" data-rate="${Rate}" data-description="${Description}" data-side="${Side}" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
-				  <p class="font-medium">${Title}</p>
-				  <p class="text-sm mt-1">$${(Rate * selectedMultiplier).toFixed(2)} day rate</p>
-				</div>
-				<a href="#" class="text-blue-600 mt-2 inline-block underline learn-more-${Side}">Learn more</a>
-			  `;
-	  
-			  // Insert card into the correct side
-			  if (Side === 'A') {
-				document.getElementById('serviceA').innerHTML = cardHtml;
-			  } else if (Side === 'B') {
-				document.getElementById('serviceB').innerHTML = cardHtml;
+		}
+		
+		// Function to populate hero section with data from Airtable
+		function populateHeroContent(records) {
+		  const { Title, Intro } = records[0].fields;
+		  document.querySelector('h1').textContent = Title;
+		  document.querySelector('p').textContent = Intro;
+		}
+
+		// Get region data from the "Regions" table in Airtable and populate the dropdown
+		async function fetchRegions() {
+		  try {
+			const response = await fetch(regionsApiUrl, {
+			  headers: {
+				Authorization: `Bearer ${airtableApiKey}`
 			  }
 			});
-	  
-			addServiceCardEventListeners();
+			const data = await response.json();
+			populateRegionsDropdown(data.records);
+		  } catch (error) {
+			console.error('Error fetching regions:', error);
 		  }
-	  
-		  // Update service rates dynamically based on selected region
-		  function updateServiceRates() {
-			Object.keys(servicesData).forEach(side => {
-			  const service = servicesData[side];
-			  const updatedRate = (service.Rate * selectedMultiplier).toFixed(2);
-			  const serviceElement = document.querySelector(`#service${side} .service-option`);
-			  serviceElement.querySelector('.text-sm').textContent = `$${updatedRate} day rate`;
-			});
-		  }
-  
-		  // Load Airtable data on page load
-		  fetchHeroContent();  // Fetch hero content
-		  fetchAirtableData(); // Fetch service data
-	  
-		  // Variables to keep track of selected services
-		  let selectedServiceA = null;
-		  let selectedServiceB = null;
-		  let selectedServiceRate = 0;
-		  let days = 1.0;
-		  let weeks = 1;  // New variable for weeks
-	  
-		  const daysElement = document.getElementById('days');
-		  const weeksElement = document.getElementById('weeks');  // Reference to weeks counter
-		  const totalPriceElement = document.getElementById('totalPrice');
-		  const startDateSection = document.getElementById('startDateSection');
-		  const weeksSection = document.getElementById('weeksSection');  // Reference to the new weeks section
-		  const proceedButton = document.getElementById('scheduleKickoff');
-		  const startDateElement = document.getElementById('startDate');
-	  
-		  proceedButton.disabled = true;
-  
-		  // Function to get the next Monday from a given date
-		  function getNextMonday(date) {
-			const dayOfWeek = date.getDay();
-			const diff = (7 - dayOfWeek + 1) % 7; // Calculate days to next Monday
-			const nextMonday = new Date(date);
-			nextMonday.setDate(date.getDate() + diff);
-			return nextMonday;
-		  }
-  
-		  // Function to format a date as YYYY-MM-DD for the value attribute
-		  function formatDate(date) {
-			const year = date.getFullYear();
-			const month = String(date.getMonth() + 1).padStart(2, '0'); // Add leading zero if needed
-			const day = String(date.getDate()).padStart(2, '0'); // Add leading zero if needed
-			return `${year}-${month}-${day}`;
-		  }
-  
-		  // Function to generate next 4 Mondays and populate the select options
-		  function populateStartDateOptions() {
-			const startDateSelect = document.getElementById('startDate');
-			startDateSelect.innerHTML = ''; // Clear existing options
-  
-			const today = new Date();
-			let nextMonday = getNextMonday(today);
-  
-			for (let i = 0; i < 4; i++) {
-			  const option = document.createElement('option');
-			  option.value = formatDate(nextMonday);
-			  option.textContent = `Week of Monday, ${nextMonday.toLocaleDateString('en-US', {
-				month: 'short',
-				day: 'numeric',
-			  })}`;
-			  
-			  startDateSelect.appendChild(option);
-  
-			  // Move to the next Monday
-			  nextMonday.setDate(nextMonday.getDate() + 7);
-			}
-		  }
-  
-		  // Call the function to populate the start date options on page load
-		  populateStartDateOptions();
-  
-		  // Function to calculate the Friday of the last week
-		  function calculateEndDate(startDate, weeks) {
-			const start = new Date(startDate);
-			
-			// Calculate the number of days to the Friday of the last week
-			const totalDays = (weeks * 7) - 2; // Monday + (weeks * 7) - 3 days to get to Friday
-			const endDate = new Date(start);
-			endDate.setDate(start.getDate() + totalDays);
-			
-			return endDate;
-		  }
-  
-		  // Function to format the end date as 'Friday, Month Day, Year'
-		  function formatEndDate(date) {
-			return date.toLocaleDateString('en-US', {
-			  weekday: 'long',
-			  year: 'numeric',
-			  month: 'short',
-			  day: 'numeric'
-			});
-		  }
-  
-		  // Update the end date display
-		  function updateEndDate() {
-			const startDate = document.getElementById('startDate').value;
-			
-			if (startDate && weeks > 0) {
-			  const endDate = calculateEndDate(startDate, weeks);
-			  document.getElementById('endDate').textContent = formatEndDate(endDate);
-			} else {
-			  document.getElementById('endDate').textContent = 'N/A';
-			}
-		  }
-  
-		  // Add event listeners to update the end date when the weeks or start date changes
-		  startDateElement.addEventListener('change', updateEndDate);
-  
-		  // Also call updateEndDate after updating the total price to ensure the end date is always accurate
-		  document.getElementById('increaseWeeks').addEventListener('click', () => {
-			if (weeks < 52) {
-			  weeks += 1;
-			  weeksElement.textContent = weeks;
-			  updateTotalPrice();
-			  printSummary();
-			  updateEndDate(); // Update end date when weeks change
-			}
-		  });
-  
-		  document.getElementById('decreaseWeeks').addEventListener('click', () => {
-			if (weeks > 1) {
-			  weeks -= 1;
-			  weeksElement.textContent = weeks;
-			  updateTotalPrice();
-			  printSummary();
-			  updateEndDate(); // Update end date when weeks change
-			}
-		  });
-  
-		  startDateElement.addEventListener('change', (e) => {
-			printSummary();
-			updateEndDate(); // Update end date when start date changes
-		  });
-  
-		  // Function to add event listeners for the service options
-		  function addServiceCardEventListeners() {
-			document.querySelectorAll('.service-option').forEach(option => {
-			  option.addEventListener('click', () => {
-				const side = option.getAttribute('data-side');
-	  
-				// If side A is selected, deselect side B and vice versa
-				if (side === 'A') {
-				  if (selectedServiceB) {
-					deselectService(selectedServiceB, 'B');
-				  }
-				  if (selectedServiceA === option) {
-					deselectService(option, 'A');
-				  } else {
-					selectService(option, 'A');
-				  }
-				} else if (side === 'B') {
-				  if (selectedServiceA) {
-					deselectService(selectedServiceA, 'A');
-				  }
-				  if (selectedServiceB === option) {
-					deselectService(option, 'B');
-				  } else {
-					selectService(option, 'B');
-				  }
-				}
-	  
-				toggleProceedButton();
-				updateTotalPrice();
-				printSummary();
-			  });
-			});
-	  
-			// Add event listeners to the 'Learn more' buttons for modals
-			document.querySelector('.learn-more-A').addEventListener('click', function(e) {
-			  e.preventDefault();
-			  const selectedService = document.querySelector('.service-option[data-side="A"]');
-			  showModal('modalDesign', selectedService.getAttribute('data-description'));
-			});
-	  
-			document.querySelector('.learn-more-B').addEventListener('click', function(e) {
-			  e.preventDefault();
-			  const selectedService = document.querySelector('.service-option[data-side="B"]');
-			  showModal('modalDesignCode', selectedService.getAttribute('data-description'));
-			});
-		  }
-	  
-		  // Show modal
-		  function showModal(modalId, description) {
-			const modal = document.getElementById(modalId);
-			modal.querySelector('p').textContent = description; // Set the description in the modal
-			modal.classList.remove('hidden');
-		  }
-	  
-		  // Close modal
-		  function closeModal(modalId) {
-			document.getElementById(modalId).classList.add('hidden');
-		  }
-	  
-		  // Event listeners to close modals when clicking outside or on close button
-		  document.getElementById('closeModalDesign').addEventListener('click', function() {
-			closeModal('modalDesign');
-		  });
-	  
-		  document.getElementById('closeModalDesignCode').addEventListener('click', function() {
-			closeModal('modalDesignCode');
-		  });
-	  
-		  window.addEventListener('click', function(e) {
-			const modalDesign = document.getElementById('modalDesign');
-			const modalDesignCode = document.getElementById('modalDesignCode');
-	  
-			if (e.target === modalDesign) {
-			  closeModal('modalDesign');
-			} else if (e.target === modalDesignCode) {
-			  closeModal('modalDesignCode');
-			}
-		  });
-	  
-		  // Select service
-		  function selectService(option, side) {
-			if (side === 'A') {
-			  selectedServiceA = option;
-			} else if (side === 'B') {
-			  selectedServiceB = option;
-			}
-	  
-			option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
-			selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
-			document.getElementById('daysSection').classList.remove('hidden');
-			startDateSection.classList.remove('hidden');
-			weeksSection.classList.remove('hidden');  // Show the weeks section
-		  }
-	  
-		  // Deselect service
-		  function deselectService(option, side) {
-			option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
-			if (side === 'A') {
-			  selectedServiceA = null;
-			} else if (side === 'B') {
-			  selectedServiceB = null;
-			}
-	  
-			if (!selectedServiceA && !selectedServiceB) {
-			  document.getElementById('daysSection').classList.add('hidden');
-			  startDateSection.classList.add('hidden');
-			  weeksSection.classList.add('hidden');  // Hide the weeks section if no service is selected
-			}
-	  
-			resetServiceSelection();
-		  }
-	  
-		  document.getElementById('increase').addEventListener('click', () => {
-			if (days < 5) {
-			  days += 0.5;
-			  daysElement.textContent = days.toFixed(1);
-			  updateTotalPrice();
-			  printSummary();
-			}
-		  });
-	  
-		  document.getElementById('decrease').addEventListener('click', () => {
-			if (days > 0.5) {
-			  days -= 0.5;
-			  daysElement.textContent = days.toFixed(1);
-			  updateTotalPrice();
-			  printSummary();
-			}
-		  });
-	  
-		  // Reset service selection
-		  function resetServiceSelection() {
-			selectedServiceRate = 0;
-			daysElement.textContent = days.toFixed(1);
-			weeksElement.textContent = weeks;  // Reset weeks to default value
-			updateTotalPrice();
-			toggleProceedButton();
-		  }
-	  
-		  function updateTotalPrice() {
-			const total = selectedServiceRate * days * weeks * selectedMultiplier;  // Calculate total price based on days, weeks, and multiplier
-			totalPriceElement.textContent = '$' + total.toLocaleString();
-		  }
-	  
-		  function toggleProceedButton() {
-			if (selectedServiceA || selectedServiceB) {
-			  proceedButton.disabled = false;
-			} else {
-			  proceedButton.disabled = true;
-			}
-		  }
-	  
-		  function printSummary() {
-			let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
-			let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
-			let startDate = document.getElementById('startDate').value;
-	  
-			let summary = `Selected Service A: ${serviceNameA}\nSelected Service B: ${serviceNameB}\nDays per Week: ${days.toFixed(1)}\nWeeks: ${weeks}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days * weeks * selectedMultiplier).toLocaleString()}`;
-			console.log(summary);
-		  }
+		}
+
+// Function to populate region dropdown
+		function populateRegionsDropdown(records) {
+		  const clientRegionSelect = document.getElementById('clientRegion');
 		  
-		  // Link the "Schedule a discovery call" button to the provided URL
-		  document.getElementById('saveDraft').addEventListener('click', function() {
-			window.location.href = 'https://cal.com/chrismeisner/intro';
+		  // Sort regions by name (ascending order, A-Z)
+		  const sortedRecords = records.sort((a, b) => a.fields.Name.localeCompare(b.fields.Name));
+		
+		  let newYorkOption = null;
+		  sortedRecords.forEach(record => {
+			const option = document.createElement('option');
+			option.value = record.fields.Multiplier;  // Use Multiplier as value
+			option.textContent = record.fields.Name;  // Display "Name" field in the dropdown
+			clientRegionSelect.appendChild(option);
+		
+			// Set default selection to "New York 🗽" if present
+			if (record.fields.Name === 'New York 🗽') {
+			  newYorkOption = option;
+			}
 		  });
+		
+		  if (newYorkOption) {
+			newYorkOption.selected = true;
+			selectedMultiplier = parseFloat(newYorkOption.value); // Set selectedMultiplier
+		  } else {
+			// Set the first option's multiplier if New York is not found
+			selectedMultiplier = parseFloat(clientRegionSelect.options[0].value);
+		  }
+		
+		  updateServiceRates(); // Update service rates after setting the region
+		}
+
+
+		// Event listener for region selection to update the multiplier and day rates
+		document.getElementById('clientRegion').addEventListener('change', function(e) {
+		  selectedMultiplier = parseFloat(e.target.value);
+		  updateServiceRates();
+		  updateTotalPrice();
 		});
-</script>  
+
+		// Fetch regions and populate the dropdown on page load
+		fetchRegions();
+
+		// Get service data from the "Services" table in Airtable
+		async function fetchAirtableData() {
+		  try {
+			const response = await fetch(servicesApiUrl, {
+			  headers: {
+				Authorization: `Bearer ${airtableApiKey}`
+			  }
+			});
+			const data = await response.json();
+			populateServiceCards(data.records);
+		  } catch (error) {
+			console.error('Error fetching Airtable data:', error);
+		  }
+		}
+	
+		// Populate service cards dynamically
+		function populateServiceCards(records) {
+		  records.forEach(record => {
+			const { Side, Title, Rate, Description } = record.fields;
+
+			// Store initial rates in servicesData
+			servicesData[Side] = { Title, Rate, Description };
+
+			// Create card HTML
+			const cardHtml = `
+			  <div data-service="${Title}" data-rate="${Rate}" data-description="${Description}" data-side="${Side}" class="service-option block bg-gray-200 p-4 rounded-md text-center cursor-pointer border border-gray-200 hover:border-blue-500 transition-colors">
+				<p class="font-medium">${Title}</p>
+				<p class="text-sm mt-1">$${(Rate * selectedMultiplier).toFixed(2)} day rate</p>
+			  </div>
+			  <a href="#" class="text-blue-600 mt-2 inline-block underline learn-more-${Side}">Learn more</a>
+			`;
+	
+			// Insert card into the correct side
+			if (Side === 'A') {
+			  document.getElementById('serviceA').innerHTML = cardHtml;
+			} else if (Side === 'B') {
+			  document.getElementById('serviceB').innerHTML = cardHtml;
+			}
+		  });
+	
+		  addServiceCardEventListeners();
+		}
+	
+		// Update service rates dynamically based on selected region
+		function updateServiceRates() {
+		  Object.keys(servicesData).forEach(side => {
+			const service = servicesData[side];
+			const updatedRate = (service.Rate * selectedMultiplier).toFixed(2);
+			const serviceElement = document.querySelector(`#service${side} .service-option`);
+			serviceElement.querySelector('.text-sm').textContent = `$${updatedRate} day rate`;
+		  });
+		}
+
+		// Load Airtable data on page load
+		fetchHeroContent();  // Fetch hero content
+		fetchAirtableData(); // Fetch service data
+	
+		// Variables to keep track of selected services
+		let selectedServiceA = null;
+		let selectedServiceB = null;
+		let selectedServiceRate = 0;
+		let days = 1.0;
+		let weeks = 1;  // New variable for weeks
+	
+		const daysElement = document.getElementById('days');
+		const weeksElement = document.getElementById('weeks');  // Reference to weeks counter
+		const totalPriceElement = document.getElementById('totalPrice');
+		const startDateSection = document.getElementById('startDateSection');
+		const weeksSection = document.getElementById('weeksSection');  // Reference to the new weeks section
+		const proceedButton = document.getElementById('scheduleKickoff');
+		const startDateElement = document.getElementById('startDate');
+	
+		proceedButton.disabled = true;
+
+		// Function to get the next Monday from a given date
+		function getNextMonday(date) {
+		  const dayOfWeek = date.getDay();
+		  const diff = (7 - dayOfWeek + 1) % 7; // Calculate days to next Monday
+		  const nextMonday = new Date(date);
+		  nextMonday.setDate(date.getDate() + diff);
+		  return nextMonday;
+		}
+
+		// Function to format a date as YYYY-MM-DD for the value attribute
+		function formatDate(date) {
+		  const year = date.getFullYear();
+		  const month = String(date.getMonth() + 1).padStart(2, '0'); // Add leading zero if needed
+		  const day = String(date.getDate()).padStart(2, '0'); // Add leading zero if needed
+		  return `${year}-${month}-${day}`;
+		}
+
+		// Function to generate next 4 Mondays and populate the select options
+		function populateStartDateOptions() {
+		  const startDateSelect = document.getElementById('startDate');
+		  startDateSelect.innerHTML = ''; // Clear existing options
+
+		  const today = new Date();
+		  let nextMonday = getNextMonday(today);
+
+		  for (let i = 0; i < 4; i++) {
+			const option = document.createElement('option');
+			option.value = formatDate(nextMonday);
+			option.textContent = `Week of Monday, ${nextMonday.toLocaleDateString('en-US', {
+			  month: 'short',
+			  day: 'numeric',
+			})}`;
+			
+			startDateSelect.appendChild(option);
+
+			// Move to the next Monday
+			nextMonday.setDate(nextMonday.getDate() + 7);
+		  }
+		}
+
+		// Call the function to populate the start date options on page load
+		populateStartDateOptions();
+
+		// Function to calculate the Friday of the last week
+		function calculateEndDate(startDate, weeks) {
+		  const start = new Date(startDate);
+		  
+		  // Calculate the number of days to the Friday of the last week
+		  const totalDays = (weeks * 7) - 2; // Monday + (weeks * 7) - 3 days to get to Friday
+		  const endDate = new Date(start);
+		  endDate.setDate(start.getDate() + totalDays);
+		  
+		  return endDate;
+		}
+
+		// Function to format the end date as 'Friday, Month Day, Year'
+		function formatEndDate(date) {
+		  return date.toLocaleDateString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric'
+		  });
+		}
+
+		// Update the end date display
+		function updateEndDate() {
+		  const startDate = document.getElementById('startDate').value;
+		  
+		  if (startDate && weeks > 0) {
+			const endDate = calculateEndDate(startDate, weeks);
+			document.getElementById('endDate').textContent = formatEndDate(endDate);
+		  } else {
+			document.getElementById('endDate').textContent = 'N/A';
+		  }
+		}
+
+		// Add event listeners to update the end date when the weeks or start date changes
+		startDateElement.addEventListener('change', updateEndDate);
+
+		// Also call updateEndDate after updating the total price to ensure the end date is always accurate
+		document.getElementById('increaseWeeks').addEventListener('click', () => {
+		  if (weeks < 52) {
+			weeks += 1;
+				weeksElement.textContent = weeks;
+			updateTotalPrice();
+			printSummary();
+			updateEndDate(); // Update end date when weeks change
+		  }
+		});
+
+		document.getElementById('decreaseWeeks').addEventListener('click', () => {
+		  if (weeks > 1) {
+			weeks -= 1;
+			weeksElement.textContent = weeks;
+			updateTotalPrice();
+			printSummary();
+			updateEndDate(); // Update end date when weeks change
+		  }
+		});
+
+		startDateElement.addEventListener('change', (e) => {
+		  printSummary();
+		  updateEndDate(); // Update end date when start date changes
+		});
+
+		// Function to add event listeners for the service options
+		function addServiceCardEventListeners() {
+		  document.querySelectorAll('.service-option').forEach(option => {
+			option.addEventListener('click', () => {
+			  const side = option.getAttribute('data-side');
+	
+			  // If side A is selected, deselect side B and vice versa
+			  if (side === 'A') {
+				if (selectedServiceB) {
+				  deselectService(selectedServiceB, 'B');
+				}
+				if (selectedServiceA === option) {
+				  deselectService(option, 'A');
+				} else {
+				  selectService(option, 'A');
+				}
+			  } else if (side === 'B') {
+				if (selectedServiceA) {
+				  deselectService(selectedServiceA, 'A');
+				}
+				if (selectedServiceB === option) {
+				  deselectService(option, 'B');
+				} else {
+				  selectService(option, 'B');
+				}
+			  }
+	
+			  toggleProceedButton();
+			  updateTotalPrice();
+			  printSummary();
+			});
+		  });
+	
+		  // Add event listeners to the 'Learn more' buttons for modals
+		  document.querySelector('.learn-more-A').addEventListener('click', function(e) {
+			e.preventDefault();
+			const selectedService = document.querySelector('.service-option[data-side="A"]');
+			showModal('modalDesign', selectedService.getAttribute('data-description'));
+		  });
+	
+		  document.querySelector('.learn-more-B').addEventListener('click', function(e) {
+			e.preventDefault();
+			const selectedService = document.querySelector('.service-option[data-side="B"]');
+			showModal('modalDesignCode', selectedService.getAttribute('data-description'));
+		  });
+		}
+	
+		// Select service
+		function selectService(option, side) {
+		  if (side === 'A') {
+			selectedServiceA = option;
+		  } else if (side === 'B') {
+			selectedServiceB = option;
+		  }
+	
+		  option.classList.add('selected', 'bg-blue-100', 'border-blue-500');
+		  selectedServiceRate = parseFloat(option.getAttribute('data-rate'));
+		  document.getElementById('daysSection').classList.remove('hidden');
+		  startDateSection.classList.remove('hidden');
+		  weeksSection.classList.remove('hidden');  // Show the weeks section
+		}
+	
+		// Deselect service
+		function deselectService(option, side) {
+		  option.classList.remove('selected', 'bg-blue-100', 'border-blue-500');
+		  if (side === 'A') {
+			selectedServiceA = null;
+		  } else if (side === 'B') {
+			selectedServiceB = null;
+		  }
+	
+		  if (!selectedServiceA && !selectedServiceB) {
+			document.getElementById('daysSection').classList.add('hidden');
+			startDateSection.classList.add('hidden');
+			weeksSection.classList.add('hidden');  // Hide the weeks section if no service is selected
+		  }
+	
+		  resetServiceSelection();
+		}
+	
+		document.getElementById('increase').addEventListener('click', () => {
+		  if (days < 5) {
+			days += 0.5;
+			daysElement.textContent = days.toFixed(1);
+			updateTotalPrice();
+			printSummary();
+		  }
+		});
+	
+		document.getElementById('decrease').addEventListener('click', () => {
+		  if (days > 0.5) {
+			days -= 0.5;
+			daysElement.textContent = days.toFixed(1);
+			updateTotalPrice();
+			printSummary();
+		  }
+		});
+	
+	
+		startDateElement.addEventListener('change', (e) => {
+		  printSummary();
+		  updateEndDate(); // Update end date when start date changes
+		});
+	
+		function resetServiceSelection() {
+		  selectedServiceRate = 0;
+		  daysElement.textContent = days.toFixed(1);
+		  weeksElement.textContent = weeks;  // Reset weeks to default value
+		  updateTotalPrice();
+		  toggleProceedButton();
+		}
+	
+		function updateTotalPrice() {
+		  const total = selectedServiceRate * days * weeks * selectedMultiplier;  // Calculate total price based on days, weeks, and multiplier
+		  totalPriceElement.textContent = '$' + total.toLocaleString();
+		}
+	
+		function toggleProceedButton() {
+		  if (selectedServiceA || selectedServiceB) {
+			proceedButton.disabled = false;
+		  } else {
+			proceedButton.disabled = true;
+		  }
+		}
+	
+		function printSummary() {
+		  let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
+		  let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
+		  let startDate = document.getElementById('startDate').value;
+	
+		  let summary = `Selected Service A: ${serviceNameA}\nSelected Service B: ${serviceNameB}\nDays per Week: ${days.toFixed(1)}\nWeeks: ${weeks}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days * weeks * selectedMultiplier).toLocaleString()}`;
+		  console.log(summary);
+		}
+
+		// Airtable Submission
+		document.getElementById('scheduleKickoff').addEventListener('click', async function() {
+		  const clientEmail = document.getElementById('clientEmail').value;
+		  const emailError = document.getElementById('emailError');
+		  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex
+
+		  if (!emailPattern.test(clientEmail)) {
+			emailError.classList.remove('hidden'); // Show error if email is invalid
+			return;
+		  } else {
+			emailError.classList.add('hidden'); // Hide error if email is valid
+		  }
+
+		  // Get selected region
+		  const clientRegionSelect = document.getElementById('clientRegion');
+		  const selectedRegion = clientRegionSelect.options[clientRegionSelect.selectedIndex].text;
+	  
+		  // Get selected services and calculate total price
+		  let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
+		  let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
+		  let selectedService = serviceNameA !== 'None' ? serviceNameA : serviceNameB; // Only one service should be selected
+		  let startDate = document.getElementById('startDate').value;
+		  let totalPrice = (selectedServiceRate * days * weeks * selectedMultiplier).toFixed(2);
+	  
+		  // Create a new record object for Airtable
+		  const newRecord = {
+			fields: {
+			  "Region": selectedRegion,  // Region from dropdown
+			  "Email": clientEmail,  // Client's email
+			  "Service": selectedService,  // Chosen service (either A or B)
+			  "Days": days,  // Days per week
+			  "Weeks": weeks,  // Number of weeks
+			  "Start Date": startDate,  // Chosen start date
+			  "Quote": parseFloat(totalPrice),  // Total price calculated
+			}
+		  };
+	  
+		  try {
+			const response = await fetch(submissionsApiUrl, {
+			  method: 'POST',
+			  headers: {
+				'Authorization': `Bearer ${airtableApiKey}`,
+				'Content-Type': 'application/json'
+			  },
+			  body: JSON.stringify(newRecord)
+			});
+	  
+			if (response.ok) {
+			  alert('Submission successful!');
+			} else {
+			  console.error('Error submitting data:', await response.text());
+			  alert('There was an error with your submission. Please try again.');
+			}
+		  } catch (error) {
+			console.error('Error submitting data:', error);
+			alert('There was an error with your submission. Please try again.');
+		  }
+		});
+
+		// Save Draft Functionality
+		document.getElementById('saveDraft').addEventListener('click', function() {
+		  const clientEmail = document.getElementById('clientEmail').value;
+
+		  if (!clientEmail) {
+			alert('Please enter your email to save a draft');
+			return;
+		  }
+
+		  // Collect draft data
+		  let serviceNameA = selectedServiceA ? selectedServiceA.getAttribute('data-service') : 'None';
+		  let serviceNameB = selectedServiceB ? selectedServiceB.getAttribute('data-service') : 'None';
+		  let selectedService = serviceNameA !== 'None' ? serviceNameA : serviceNameB;
+		  let startDate = document.getElementById('startDate').value;
+		  let totalPrice = (selectedServiceRate * days * weeks * selectedMultiplier).toFixed(2);
+
+		  // Simulate sending the email to the user
+		  const draftSummary = `Here's your draft:\n\nRegion: ${selectedRegion}\nService: ${selectedService}\nDays: ${days}\nWeeks: ${weeks}\nStart Date: ${startDate}\nTotal Price: $${totalPrice}`;
+		  
+		  console.log("Draft email sent to:", clientEmail, "\nContent:", draftSummary);
+		  alert(`Draft saved and emailed to: ${clientEmail}`);
+		});
+	
+		// Function to show modals with dynamic content
+		function showModal(modalId, description) {
+		  const modal = document.getElementById(modalId);
+		  modal.querySelector('p').textContent = description; // Set the description in the modal
+		  modal.classList.remove('hidden');
+		}
+	
+		// Close modals
+		document.getElementById('closeModalDesign').addEventListener('click', function() {
+		  document.getElementById('modalDesign').classList.add('hidden');
+		});
+	
+		document.getElementById('closeModalDesignCode').addEventListener('click', function() {
+		  document.getElementById('modalDesignCode').classList.add('hidden');
+		});
+	
+		// Close modal when clicking outside
+		window.addEventListener('click', function(e) {
+		  if (e.target === document.getElementById('modalDesign')) {
+			document.getElementById('modalDesign').classList.add('hidden');
+		  }
+		  if (e.target === document.getElementById('modalDesignCode')) {
+			document.getElementById('modalDesignCode').classList.add('hidden');
+		  }
+		});
+	  });
+	</script>
+
 </body>
 </html>
