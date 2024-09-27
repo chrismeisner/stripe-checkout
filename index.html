@@ -22,7 +22,11 @@
 	<div class="mb-6">
 	  <h1 class="text-2xl font-bold text-left">Chris Meisner</h1>
 	  <p class="text-gray-700 mt-2 text-left">Intro paragraph, design partner to founders, help founders and startups bring their ideas to life.</p>
+	
+	<!--
 	  <a href="https://cal.com/chrismeisner/intro" target="_blank" class="text-blue-600 mt-4 inline-block underline">Book a discovery call</a>
+	-->
+	
 	</div>
 
 	<!-- New Section: Client Region Dropdown -->
@@ -451,6 +455,38 @@
 			});
 		  }
 	  
+		  // Show modal
+		  function showModal(modalId, description) {
+			const modal = document.getElementById(modalId);
+			modal.querySelector('p').textContent = description; // Set the description in the modal
+			modal.classList.remove('hidden');
+		  }
+	  
+		  // Close modal
+		  function closeModal(modalId) {
+			document.getElementById(modalId).classList.add('hidden');
+		  }
+	  
+		  // Event listeners to close modals when clicking outside or on close button
+		  document.getElementById('closeModalDesign').addEventListener('click', function() {
+			closeModal('modalDesign');
+		  });
+	  
+		  document.getElementById('closeModalDesignCode').addEventListener('click', function() {
+			closeModal('modalDesignCode');
+		  });
+	  
+		  window.addEventListener('click', function(e) {
+			const modalDesign = document.getElementById('modalDesign');
+			const modalDesignCode = document.getElementById('modalDesignCode');
+	  
+			if (e.target === modalDesign) {
+			  closeModal('modalDesign');
+			} else if (e.target === modalDesignCode) {
+			  closeModal('modalDesignCode');
+			}
+		  });
+	  
 		  // Select service
 		  function selectService(option, side) {
 			if (side === 'A') {
@@ -502,19 +538,7 @@
 			}
 		  });
 	  
-	  
-		  startDateElement.addEventListener('change', (e) => {
-			printSummary();
-			updateEndDate(); // Update end date when start date changes
-		  });
-  
-		  // The rest of the code remains the same, including the functions for Airtable submission and modals.
-
-		  // Link the "Schedule a discovery call" button to the provided URL
-		  document.getElementById('saveDraft').addEventListener('click', function() {
-			window.location.href = 'https://cal.com/chrismeisner/intro';
-		  });
-	  
+		  // Reset service selection
 		  function resetServiceSelection() {
 			selectedServiceRate = 0;
 			daysElement.textContent = days.toFixed(1);
@@ -544,8 +568,12 @@
 			let summary = `Selected Service A: ${serviceNameA}\nSelected Service B: ${serviceNameB}\nDays per Week: ${days.toFixed(1)}\nWeeks: ${weeks}\nStart Date: ${startDate}\nTotal Price: $${(selectedServiceRate * days * weeks * selectedMultiplier).toLocaleString()}`;
 			console.log(summary);
 		  }
+		  
+		  // Link the "Schedule a discovery call" button to the provided URL
+		  document.getElementById('saveDraft').addEventListener('click', function() {
+			window.location.href = 'https://cal.com/chrismeisner/intro';
+		  });
 		});
-	  </script>
-  
+</script>  
 </body>
 </html>
